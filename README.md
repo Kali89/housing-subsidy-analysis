@@ -81,6 +81,22 @@ total_annual = Σ_bed (subsidy_monthly_bed × units_bed × 12)
 
 ---
 
+## The hidden subsidy to London's economy
+
+The geographic concentration of the subsidy raises an argument that goes beyond housing policy. A conventional defence of social housing in high-cost areas is that it allows low-wage workers — hospital staff, transport workers, cleaners — to live close enough to central London to fill jobs the city depends on. This is sometimes called the "essential workers" argument.
+
+But viewed from the perspective of regional economic balance, that argument is double-edged. If workers in central London can live at below-market housing costs because the state is bridging the gap, employers do not have to pay wages that fully reflect the cost of living there. The social housing stock is, in effect, a labour cost subsidy to London businesses: it expands the supply of affordable labour, keeps wages lower than a genuine market would require, and makes central London more economically competitive than it would otherwise be — at national expense.
+
+The mechanism is invisible precisely because it operates through the housing market rather than through public expenditure. If government were to announce an explicit annual grant to central London employers to offset their wage bills, the political and distributional scrutiny would be intense. The implicit subsidy identified in this analysis — heavily concentrated in inner London, never appearing in a budget line — is economically close to that, but faces none of that scrutiny.
+
+This matters for regional rebalancing. The UK's economic geography is unusually London-centric: London generates roughly 22% of national GDP while housing 13% of the population, and the productivity gap between London and most other English regions has widened over decades. Some of that gap reflects genuine agglomeration advantages. But some of it is built on a platform of state-subsidised labour costs that effectively tilts the economic playing field in London's favour. Businesses in Birmingham or Leeds, paying wages that must cover genuine local market housing costs, compete against London firms whose labour costs are quietly underwritten by the public sector.
+
+A full levelling-up argument would therefore note that selling or reallocating London social housing stock — far from being harmful to the national interest — might be one of the few policy levers that could reduce London-centrism without requiring active redistribution of public spending. If London employers had to pay wages that reflected true market housing costs, the city would become measurably more expensive to operate in. Some activity and investment that currently gravitates to London because it is artificially cheap to staff would instead locate in regions where no such subsidy has distorted the labour market.
+
+**Caveats to this argument:** The direct wage-suppression effect is probably modest in scale — social housing now represents only 5–8% of London households — and many of London's dominant industries cluster there for agglomeration reasons that would not be undone by higher wages alone. The argument is stronger as a structural and political-economy point (a hidden, unscrutinised, compounding subsidy to the richest part of the country) than as a precise labour market mechanism. It is also worth noting that social housing is one of many implicit subsidies to London: major infrastructure investment, the concentration of government employment, and national cultural institutions all tilt the same way. Social housing is a small part of a larger structural bias.
+
+---
+
 ## Reproducing the analysis
 
 ```bash
