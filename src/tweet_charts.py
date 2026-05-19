@@ -614,6 +614,183 @@ def chart_supply_vs_stock() -> None:
     _save(fig, "07_supply_vs_stock")
 
 
+# ── Chart 8: Government-grant Social Rent investment per capita, NE vs London ──
+
+REGIONAL_POP = {
+    "North East":                  2_647_000,
+    "North West":                  7_417_000,
+    "Yorkshire and The Humber":    5_480_000,
+    "East Midlands":               4_934_000,
+    "West Midlands":               5_902_000,
+    "East of England":             6_335_000,
+    "London":                      8_796_000,
+    "South East":                  9_180_000,
+    "South West":                  5_701_000,
+}
+
+
+def _grant_units() -> pd.DataFrame:
+    df = pd.read_csv(RAW / "ahs_open_data.csv", low_memory=False)
+    df = df[df["Completions"] == "Completion"].copy()
+    df["year_start"] = df["Year"].str[:4].astype(int)
+
+    def is_grant(x):
+        x = str(x)
+        return "HE/GLA funded" in x or "HE Funded" in x or "Guarantees" in x
+
+    sr = df[(df["Tenure"] == "Social Rent") & (df["year_start"] >= 2009)].copy()
+    sr["govt_grant"] = sr["LT1000"].apply(is_grant)
+
+    grant = (
+        sr[sr["govt_grant"]]
+        .groupby(["Region name", "year_start"])["Units"].sum()
+        .reset_index()
+    )
+    grant["pop"]      = grant["Region name"].map(REGIONAL_POP)
+    grant["per_100k"] = grant["Units"] / (grant["pop"] / 100_000)
+    return grant
+
+
+def chart_grant_investment_ne_london() -> None:
+    """Year-by-year govt-grant Social Rent completions per 100k: NE vs London."""
+    grant = _grant_units()
+
+    years  = sorted(grant["year_start"].unique())
+    ne_p   = grant[grant["Region name"] == "North East"].set_index("year_start")["per_100k"].reindex(years, fill_value=0)
+    lon_p  = grant[grant["Region name"] == "London"].set_index("year_start")["per_100k"].reindex(years, fill_value=0)
+
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    fig.patch.set_facecolor(WHITE)
+    ax.set_facecolor(WHITE)
+
+    ax.fill_between(years, lon_p, alpha=0.12, color=RED)
+    ax.fill_between(years, ne_p,  alpha=0.18, color=BLUE)
+    ax.plot(years, lon_p, color=RED,  linewidth=2.5, label="London",    zorder=3)
+    ax.plot(years, ne_p,  color=BLUE, linewidth=2.5, label="North East", zorder=3)
+
+    # Annotate the most egregious years
+    ax.annotate("NE: 0 homes\nLondon: 2.8/100k",
+                xy=(2017, 0), xytext=(2017.2, 22),
+                fontsize=8.5, color="#555",
+                arrowprops=dict(arrowstyle="->", color="#999", lw=0.8),
+                bbox=dict(boxstyle="round,pad=0.25", fc=WHITE, ec="#ccc", alpha=0.9))
+
+    peak_yr = int(lon_p.idxmax())
+    peak_v  = lon_p[peak_yr]
+    ax.annotate(f"London peak:\n{peak_v:.0f}/100k ({peak_yr})",
+                xy=(peak_yr, peak_v), xytext=(peak_yr - 3, peak_v - 25),
+                fontsize=8.5, color=RED, fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color=RED, lw=0.8),
+                bbox=dict(boxstyle="round,pad=0.25", fc=WHITE, ec=RED, alpha=0.9, lw=0.8))
+
+    ax.set_xlim(years[0], years[-1])
+    ax.set_ylim(bottom=0)
+    ax.set_ylabel("Government-grant Social Rent completions\nper 100,000 people", fontsize=10, color="#444")
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:.0f}"))
+    ax.tick_params(labelsize=10)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(fontsize=11, loc="upper right", framealpha=0.9, edgecolor="#ddd")
+
+    ne_total  = int(ne_p.sum() * (REGIONAL_POP["North East"]  / 100_000))
+    lon_total = int(lon_p.sum() * (REGIONAL_POP["London"] / 100_000))
+    ne_cum    = ne_p.sum()
+    lon_cum   = lon_p.sum()
+
+    ax.set_title(
+        f"Over 15 years, London received {lon_cum/ne_cum:.1f}× more government-funded Social Rent\n"
+        f"homes per person than the North East. In 2017, the North East received zero.",
+        fontsize=13.5, fontweight="bold", color="#111", pad=14, loc="left",
+    )
+    fig.text(
+        0.01, 0.01,
+        "Source: MHCLG Affordable Housing Supply statistics 2009–2024. "
+        "Government grant = Homes England / GLA funded completions (excludes Section 106 and LA own funding). "
+        "Population: 2021 Census.",
+        fontsize=8, color="#999",
+    )
+    _save(fig, "08_grant_investment_ne_london")
+
+
+def chart_grant_per_capita_all_regions() -> None:
+    """Cumulative 2009-2024 govt-grant SR completions per 100k, all regions."""
+    grant = _grant_units()
+    reg = (
+        grant.groupby("Region name")
+        .apply(lambda g: pd.Series({
+            "total":    g["Units"].sum(),
+            "per_100k": (g["Units"].sum()) / (g["pop"].iloc[0] / 100_000),
+        }), include_groups=False)
+        .reset_index()
+        .sort_values("per_100k")
+    )
+
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    fig.patch.set_facecolor(WHITE)
+    ax.set_facecolor(WHITE)
+
+    north = {"North East", "North West", "Yorkshire and The Humber"}
+    colors = [RED if r == "London" else (BLUE if r in north else "#8ab4d4")
+              for r in reg["Region name"]]
+    bars = ax.barh(range(len(reg)), reg["per_100k"], color=colors,
+                   height=0.62, edgecolor="white", linewidth=0.4)
+
+    for bar, val, region in zip(bars, reg["per_100k"], reg["Region name"]):
+        is_north = region in north
+        ax.text(bar.get_width() + 3, bar.get_y() + bar.get_height() / 2,
+                f"{val:.0f}",
+                va="center", ha="left", fontsize=11,
+                color=RED if region == "London" else (BLUE if is_north else "#555"),
+                fontweight="bold" if (region == "London" or is_north) else "normal")
+
+    regions_short = [r.replace("Yorkshire and The Humber", "Yorks & Humber")
+                     for r in reg["Region name"]]
+    ax.set_yticks(range(len(reg)))
+    ax.set_yticklabels(regions_short, fontsize=11)
+    for lbl, r in zip(ax.get_yticklabels(), reg["Region name"]):
+        if r == "London":
+            lbl.set_color(RED)
+            lbl.set_fontweight("bold")
+        elif r in north:
+            lbl.set_color(BLUE)
+            lbl.set_fontweight("bold")
+
+    ax.set_xlabel("Government-grant Social Rent completions per 100,000 people, 2009–2024",
+                  fontsize=10, color="#444")
+    ax.set_xlim(0, reg["per_100k"].max() * 1.18)
+    ax.tick_params(labelsize=10)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="y", left=False)
+
+    lon_v = reg.loc[reg["Region name"] == "London",    "per_100k"].iloc[0]
+    ne_v  = reg.loc[reg["Region name"] == "North East","per_100k"].iloc[0]
+    yk_v  = reg.loc[reg["Region name"] == "Yorkshire and The Humber","per_100k"].iloc[0]
+
+    ax.set_title(
+        f"London received {lon_v/ne_v:.1f}× more government-funded Social Rent per person\n"
+        f"than the North East, and {lon_v/yk_v:.1f}× more than Yorkshire, over 15 years.",
+        fontsize=13.5, fontweight="bold", color="#111", pad=14, loc="left",
+    )
+    fig.text(
+        0.01, 0.01,
+        "Source: MHCLG Affordable Housing Supply statistics 2009–2024. "
+        "Government grant = Homes England / GLA funded completions only. "
+        "Population: 2021 Census. Excludes Section 106 and local authority own funding.",
+        fontsize=8, color="#999",
+    )
+
+    # Footnote on GLA
+    fig.text(
+        0.01, 0.04,
+        "Note: London's figure includes the GLA Mayor's Housing Programme — a dedicated regional "
+        "authority with housing investment powers that no other English region has.",
+        fontsize=7.5, color="#888", style="italic",
+    )
+    _save(fig, "09_grant_per_capita_regions")
+
+
 # ── Runner ─────────────────────────────────────────────────────────────────────
 
 def run() -> None:
@@ -627,6 +804,8 @@ def run() -> None:
     chart_north_vs_london(summary, long)
     chart_subsidy_lottery(summary)
     chart_supply_vs_stock()
+    chart_grant_investment_ne_london()
+    chart_grant_per_capita_all_regions()
 
 
 if __name__ == "__main__":
