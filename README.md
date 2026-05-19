@@ -28,6 +28,8 @@ This is not a rounding error. It is a structural feature of the system that has 
 - The equivalent annual gross wage saving to London employers: **£13.5bn** — social housing allows businesses to pay wages that do not reflect the true cost of living in the city
 - England is building Social Rent homes at **0.22% of stock per year** — at that rate, the existing stock turns over every **462 years**
 - Social Rent completions have fallen **79% since their early-1990s peak** (57,000/yr → 12,000/yr). We are not building our way out of this
+- **The North is the worst performer on new supply**: the North East builds Social Rent at 0.32× its stock share; the North West at 0.52×. London manages 0.68×
+- **Government grant investment per capita (2009–2024)**: London received 478 government-grant Social Rent completions per 100,000 people — **2.4× more than the North East** (199/100k) and **3.0× more than Yorkshire** (161/100k). In 2017 the North East received zero government-grant Social Rent completions
 
 ---
 
@@ -47,7 +49,13 @@ If this were an explicit payment — an annual grant from the Treasury to London
 
 The geographic distribution of social housing is essentially fixed by decades of construction decisions that are now nearly impossible to reverse. The stock turns over at 0.22% per year. Even if government redirected every new social home to the North and Midlands tomorrow, it would take many decades to materially change the distribution.
 
-New supply is making things worse, not better. Of the 12,000 Social Rent homes built in 2024, the majority were in London and the South East — where development economics for housing associations is more favourable but where the subsidy per unit is already highest. The North East, which has the worst renewal rate of any English region (0.07%/yr), is building virtually nothing.
+New supply is not correcting the geographic imbalance — and in some respects it is deepening it. The regions building most aggressively relative to their existing stock are the South West (2.15× its stock share of completions) and West Midlands (1.65×). But this is not government investment — it is Section 106 planning obligations extracted from private developers. Around half of all South West Social Rent completions and 62% of West Midlands completions come from S106 agreements, not Homes England grant. Active private housing markets in the South generate planning obligation leverage; the North, with less private development pressure, cannot capture the same mechanism.
+
+London, despite its political noise around housing, actually underbuilds Social Rent relative to its stock share (0.68× — lower than the national average). The North East is the worst performer at 0.32×, followed by the North West at 0.52×.
+
+The government grant picture is worse still. Measured by government-funded Social Rent completions per 100,000 people over the 15 years to 2024, London received 478 per 100k — 2.4× more than the North East (199 per 100k) and 3.0× more than Yorkshire (161 per 100k). In 2017, the North East received zero government-grant Social Rent completions. London's advantage is partly structural: the Greater London Authority runs a dedicated Mayor's Housing Programme with no equivalent in any Northern region, concentrating central housing investment through a single regional vehicle that other regions do not have.
+
+The North East, which has the worst renewal rate of any English region, is building virtually nothing through any mechanism.
 
 The replacement tenure — Affordable Rent at 80% of market — does not compress geographic inequality. It replicates it. A "social" tenant in Kensington paying Affordable Rent pays **£1,252/month**. A private tenant in Liverpool pays **£675/month** in an open market. The government-subsidised "affordable" home costs nearly twice as much as a genuine market home in the North.
 
@@ -83,7 +91,8 @@ The analysis covers Social Rent (formula-based, ~33–75% of market depending on
 | Statistical Data Return (SDR) — Private Registered Providers | Regulator of Social Housing | 2024–25 (March 2025) | All registered PRPs, average weekly rents by bedroom size and LA |
 | Statistical Data Return (SDR) — Local Authority Registered Providers | Regulator of Social Housing | 2024–25 (March 2025) | All LARPs, average weekly rents by bedroom size |
 | Dwelling Stock (Table 100) | MHCLG | March 2024 | LA-owned and PRP stock by LA |
-| Affordable Housing Supply | MHCLG | 1991–2025 | Completions by tenure, LA, year |
+| Affordable Housing Supply | MHCLG | 1991–2025 | Completions by tenure, LA, year, and funding type (LT1000 column distinguishes HE/GLA grant from S106 and other sources) |
+| 2021 Census regional populations | ONS | 2021 | Used to compute per-capita investment rates |
 | LA District Boundaries | ONS via martinjc/UK-GeoJSON | 2013 | Used for choropleth maps |
 
 ---
@@ -139,6 +148,8 @@ The implicit subsidy is grossed up by `1 / (1 − 0.28) = 1.39×` to estimate th
 
 7. **The subsidy never appears in a budget**: This is part of the point. Off-balance-sheet subsidies of this scale are invisible to conventional public spending frameworks.
 
+8. **Government investment figures are unit counts, not £**: The MHCLG Affordable Housing Supply dataset records completions and funding type but not grant values. Government-grant Social Rent completions per capita are used as a proxy for investment intensity. This understates the true financial gap: London grants are typically higher per unit due to elevated land and build costs, so the actual £ investment gap is wider than the unit count gap suggests.
+
 ---
 
 ## Reproducing the analysis
@@ -181,6 +192,9 @@ jupyter lab notebooks/01_subsidy_analysis.ipynb
 | `data/processed/tweet_04_supply_collapse.png` | Social Rent completions 1991–2025 |
 | `data/processed/tweet_05_north_vs_london.png` | North: 2× the homes, 3.3× less money |
 | `data/processed/tweet_06_subsidy_lottery.png` | 44:1 per-unit lottery, K&C vs Redcar |
+| `data/processed/tweet_07_supply_vs_stock.png` | Completions vs stock share by region — North East builds at 0.32× its stock share |
+| `data/processed/tweet_08_grant_investment_ne_london.png` | Government-grant Social Rent completions: London vs North East 2009–2024 |
+| `data/processed/tweet_09_grant_per_capita_regions.png` | Government-grant SR completions per 100k people — all regions, 15-year total |
 
 ---
 

@@ -4,6 +4,7 @@ __pycache__/
 .ipynb_checkpoints/
 data/raw/
 data/processed/
+data/fonts/
 *.egg-info/
 dist/
 .venv/

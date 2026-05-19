@@ -1,14 +1,15 @@
 """
-Twitter-optimised standalone charts (1200×675px, 16:9).
-Each chart is designed to make one argument on its own, without supporting text.
+Twitter-optimised standalone charts (1200×675 px, 16:9).
+Each chart makes one argument on its own.
 
-Produces data/processed/tweet_01_invisible_transfer.png  through  tweet_06_lottery.png
-Run standalone:  python -m src.tweet_charts
+Run:  python -m src.tweet_charts
 """
 
 from pathlib import Path
 
+import matplotlib.font_manager as _fm
 import matplotlib.patches as mpatches
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
@@ -18,91 +19,207 @@ from .constants import PROCESSED
 
 RAW = PROCESSED.parent / "raw"
 
-# Shared style
-BLUE   = "#2c6fad"
-RED    = "#c0392b"
-ORANGE = "#e07b39"
-GREY   = "#888888"
-LIGHT  = "#f0f4f8"
-WHITE  = "#ffffff"
-
-FIGSIZE = (12, 6.75)   # 1200×675 at 100dpi
+FIGSIZE = (12, 6.75)
 DPI = 100
 
+# ── Palette ────────────────────────────────────────────────────────────────────
+
+C = {
+    "bg":      "#FAF9F7",   # warm near-white — all backgrounds
+    "london":  "#B52D1E",   # deep crimson — London / high subsidy
+    "north":   "#1A5E99",   # rich steel blue — Northern regions
+    "mid":     "#7AAEC1",   # muted teal-blue — other regions
+    "grey":    "#B0BAC4",   # neutral grey
+    "text":    "#1C1C1E",   # near-black body text
+    "sub":     "#5A6270",   # axis labels, secondary text
+    "source":  "#ABABAB",   # footnote text
+    "grid":    "#E0DAD4",   # warm light gridlines
+    "divider": "#CCC6BC",   # stronger rule lines
+    "sr":      "#1A5E99",   # Social Rent fill
+    "ar":      "#C87722",   # Affordable Rent fill
+    "lar":     "#7AAEC1",   # London Affordable Rent fill
+    "gap_pos": "#C87722",   # overbuilding (positive gap) — amber
+    "gap_neg": "#1A5E99",   # underbuilding (negative gap) — blue
+}
+
+NORTH = {"North East", "North West", "Yorkshire and The Humber"}
+
+REGIONAL_POP = {
+    "North East":               2_647_000,
+    "North West":               7_417_000,
+    "Yorkshire and The Humber": 5_480_000,
+    "East Midlands":            4_934_000,
+    "West Midlands":            5_902_000,
+    "East of England":          6_335_000,
+    "London":                   8_796_000,
+    "South East":               9_180_000,
+    "South West":               5_701_000,
+}
+
+# ── Font ───────────────────────────────────────────────────────────────────────
+
+def _setup_fonts() -> str:
+    """Download Barlow from Google Fonts if not cached; fall back to Avenir Next."""
+    fonts_dir = PROCESSED.parent / "fonts"
+    fonts_dir.mkdir(exist_ok=True)
+
+    weights = {
+        "Barlow-Regular.ttf":  "https://github.com/google/fonts/raw/main/ofl/barlow/Barlow-Regular.ttf",
+        "Barlow-SemiBold.ttf": "https://github.com/google/fonts/raw/main/ofl/barlow/Barlow-SemiBold.ttf",
+        "Barlow-Bold.ttf":     "https://github.com/google/fonts/raw/main/ofl/barlow/Barlow-Bold.ttf",
+    }
+    try:
+        import requests
+        for fname, url in weights.items():
+            dest = fonts_dir / fname
+            if not dest.exists():
+                print(f"  Downloading font: {fname}")
+                r = requests.get(url, timeout=20)
+                r.raise_for_status()
+                dest.write_bytes(r.content)
+            _fm.fontManager.addfont(str(dest))
+        return "Barlow"
+    except Exception as exc:
+        print(f"  Font: {exc} — using Avenir Next")
+        return "Avenir Next"
+
+
+FONT = _setup_fonts()
+
+plt.rcParams.update({
+    "font.family":        FONT,
+    "axes.spines.top":    False,
+    "axes.spines.right":  False,
+    "axes.spines.left":   False,
+    "axes.spines.bottom": True,
+    "xtick.color":        C["sub"],
+    "ytick.color":        C["text"],
+    "xtick.labelsize":    10,
+    "ytick.labelsize":    10.5,
+    "axes.labelsize":     10.5,
+    "axes.labelcolor":    C["sub"],
+    "text.color":         C["text"],
+    "legend.framealpha":  0.97,
+    "legend.edgecolor":   C["divider"],
+    "legend.fontsize":    9.5,
+})
+
+# ── Shared helpers ─────────────────────────────────────────────────────────────
+
+def _region_color(r: str) -> str:
+    if r == "London": return C["london"]
+    if r in NORTH:    return C["north"]
+    return C["mid"]
+
+def _short(r: str) -> str:
+    return r.replace("Yorkshire and The Humber", "Yorks & Humber")
 
 def _save(fig: plt.Figure, name: str) -> None:
     out = PROCESSED / f"tweet_{name}.png"
-    fig.savefig(out, bbox_inches="tight", dpi=DPI, facecolor=WHITE)
+    fig.savefig(out, bbox_inches="tight", dpi=DPI, facecolor=C["bg"])
     plt.close(fig)
     print(f"  Saved: {out}")
 
+def _footnote(fig: plt.Figure, source: str, note: str = None) -> None:
+    if note:
+        fig.text(0.015, 0.040, note, fontsize=7.5, color=C["sub"],
+                 style="italic", ha="left")
+    fig.text(0.015, 0.012, f"Source: {source}", fontsize=8,
+             color=C["source"], ha="left")
 
-def _source(*lines: str) -> str:
-    return "  |  ".join(lines)
+def _ax_base(ax) -> None:
+    """Standard axis chrome for all charts."""
+    ax.set_facecolor(C["bg"])
+    ax.tick_params(axis="y", left=False)
+    ax.spines["bottom"].set_color(C["divider"])
+    ax.grid(axis="x", color=C["grid"], linewidth=0.65, zorder=0)
+    ax.set_axisbelow(True)
+
+def _ytick_style(ax, regions) -> None:
+    for lbl, r in zip(ax.get_yticklabels(), regions):
+        lbl.set_color(_region_color(r))
+        if r in {"London", "North East", "North West",
+                 "Yorkshire and The Humber"}:
+            lbl.set_fontweight("bold")
+
+def _title(ax, main: str, sub: str = "") -> None:
+    full = f"{main}\n{sub}" if sub else main
+    ax.set_title(full, fontsize=14.5, fontweight="bold", color=C["text"],
+                 pad=14, loc="left", linespacing=1.45)
+
+def _annotate(ax, text, xy, xytext, color, ha="center") -> None:
+    ax.annotate(
+        text, xy=xy, xytext=xytext,
+        fontsize=9, color=color, fontweight="bold", ha=ha,
+        arrowprops=dict(arrowstyle="-|>", color=color, lw=0.9,
+                        connectionstyle="arc3,rad=0.0"),
+        bbox=dict(boxstyle="round,pad=0.32", fc=C["bg"], ec=color,
+                  alpha=0.97, lw=0.9),
+    )
+
+def _bar_labels(ax, bars, values, fmt, region_list) -> None:
+    """Add right-aligned value labels to horizontal bars."""
+    xlim = ax.get_xlim()
+    pad = (xlim[1] - xlim[0]) * 0.013
+    for bar, val, region in zip(bars, values, region_list):
+        ax.text(
+            bar.get_width() + pad,
+            bar.get_y() + bar.get_height() / 2,
+            fmt(val), va="center", ha="left", fontsize=11,
+            color=_region_color(region),
+            fontweight="bold" if region in {"London", "North East"} else "normal",
+        )
 
 
 # ── Chart 1: The invisible transfer ───────────────────────────────────────────
 
 def chart_invisible_transfer(summary: pd.DataFrame) -> None:
-    """Regional bar: 47% of a £21bn subsidy goes to London."""
     reg = (
         summary.dropna(subset=["region", "total_annual_subsidy_social"])
         .groupby("region")["total_annual_subsidy_social"].sum()
         .sort_values() / 1e9
     )
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.20, "right": 0.86,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    _ax_base(ax)
 
-    colors = [RED if r == "London" else BLUE for r in reg.index]
-    bars = ax.barh(range(len(reg)), reg.values, color=colors, height=0.65,
-                   edgecolor="white", linewidth=0.5)
+    colors = [_region_color(r) for r in reg.index]
+    bars = ax.barh(range(len(reg)), reg.values, color=colors,
+                   height=0.62, edgecolor=C["bg"], linewidth=0.8)
 
-    for bar, val, region in zip(bars, reg.values, reg.index):
-        x = bar.get_width()
-        ax.text(x + 0.08, bar.get_y() + bar.get_height() / 2,
-                f"£{val:.1f}bn",
-                va="center", ha="left", fontsize=12,
-                color=RED if region == "London" else "#333",
-                fontweight="bold" if region == "London" else "normal")
+    ax.set_xlim(0, reg.max() * 1.28)
+    _bar_labels(ax, bars, reg.values, lambda v: f"£{v:.1f}bn", list(reg.index))
+
+    # Pct labels inside bars for London
+    total = reg.sum()
+    lon_i = list(reg.index).index("London")
+    ax.text(reg["London"] / 2, lon_i,
+            f"{reg['London']/total*100:.0f}% of total",
+            va="center", ha="center", fontsize=9.5, color="white",
+            fontweight="bold")
 
     ax.set_yticks(range(len(reg)))
-    ax.set_yticklabels(reg.index, fontsize=12)
-    for lbl, r in zip(ax.get_yticklabels(), reg.index):
-        if r == "London":
-            lbl.set_color(RED)
-            lbl.set_fontweight("bold")
-
-    ax.set_xlabel("Annual implicit subsidy (£bn)", fontsize=11, color="#444")
+    ax.set_yticklabels([_short(r) for r in reg.index], fontsize=11)
+    _ytick_style(ax, list(reg.index))
     ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"£{v:.0f}bn"))
-    ax.tick_params(axis="x", labelsize=10, colors="#555")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="y", left=False)
+    ax.set_xlabel("Annual implicit subsidy (£bn)", color=C["sub"])
 
-    total = reg.sum()
-    london_pct = reg["London"] / total * 100
-
-    ax.set_title(
-        f"England's social housing delivers a £{total:.0f}bn annual subsidy.\n"
-        f"Nearly half ({london_pct:.0f}%) goes to London — which has only 19% of the stock.",
-        fontsize=15, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25 × MHCLG Table 100. "
-        "Subsidy = market rent − social rent, summed across all social units.",
-        fontsize=8, color="#999",
-    )
+    _title(ax,
+        f"England's social housing hides a £{total:.0f}bn annual subsidy.",
+        f"Nearly half ({reg['London']/total*100:.0f}%) goes to London — "
+        f"which holds only 19% of the stock.")
+    _footnote(fig,
+        "ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25 × MHCLG Table 100. "
+        "Subsidy = market rent − social rent, summed across all social units.")
     _save(fig, "01_invisible_transfer")
 
 
-# ── Chart 2: Social rent as % of market rent by region ────────────────────────
+# ── Chart 2: Per-unit subsidy by region ───────────────────────────────────────
 
 def chart_per_unit_subsidy(summary: pd.DataFrame, long: pd.DataFrame) -> None:
-    """Average annual subsidy per social home, by region."""
     units_by_la = (
         long.dropna(subset=["social_units"])
         .groupby("la_code")["social_units"].sum()
@@ -122,140 +239,98 @@ def chart_per_unit_subsidy(summary: pd.DataFrame, long: pd.DataFrame) -> None:
         .sort_values("per_unit")
     )
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.20, "right": 0.84,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    _ax_base(ax)
 
-    colors = [RED if r == "London" else BLUE for r in reg["region"]]
+    colors = [_region_color(r) for r in reg["region"]]
     bars = ax.barh(range(len(reg)), reg["per_unit"] / 1000,
                    color=colors, height=0.62,
-                   edgecolor="white", linewidth=0.4)
+                   edgecolor=C["bg"], linewidth=0.8)
 
-    for bar, val, region in zip(bars, reg["per_unit"], reg["region"]):
-        ax.text(bar.get_width() + 0.15, bar.get_y() + bar.get_height() / 2,
-                f"£{val:,.0f}",
-                va="center", ha="left", fontsize=12,
-                color=RED if region == "London" else "#333",
-                fontweight="bold" if region == "London" else "normal")
+    ax.set_xlim(0, reg["per_unit"].max() / 1000 * 1.26)
+    _bar_labels(ax, bars, reg["per_unit"],
+                lambda v: f"£{v:,.0f}", list(reg["region"]))
 
-    regions_short = [r.replace("Yorkshire and The Humber", "Yorks & Humber")
-                     for r in reg["region"]]
     ax.set_yticks(range(len(reg)))
-    ax.set_yticklabels(regions_short, fontsize=11)
-    for lbl, r in zip(ax.get_yticklabels(), reg["region"]):
-        if r == "London":
-            lbl.set_color(RED)
-            lbl.set_fontweight("bold")
-
+    ax.set_yticklabels([_short(r) for r in reg["region"]], fontsize=11)
+    _ytick_style(ax, list(reg["region"]))
     ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"£{v:.0f}k"))
-    ax.set_xlabel("Average annual implicit subsidy per social home (£)", fontsize=11, color="#444")
-    ax.set_xlim(0, reg["per_unit"].max() / 1000 * 1.22)
-    ax.tick_params(labelsize=10)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="y", left=False)
+    ax.set_xlabel("Average annual implicit subsidy per social home")
 
     lon = reg.loc[reg["region"] == "London", "per_unit"].iloc[0]
     ne  = reg.loc[reg["region"] == "North East", "per_unit"].iloc[0]
-    ax.set_title(
-        f"A social home in London receives £{lon:,.0f}/yr in hidden subsidy.\n"
-        f"In the North East: £{ne:,.0f}. Same national system. {lon/ne:.0f}× difference.",
-        fontsize=14, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25 × MHCLG Table 100. "
-        "Subsidy = (market rent − social rent) × units, averaged across all social homes in each region.",
-        fontsize=8, color="#999",
-    )
+    _title(ax,
+        f"A social home in London receives £{lon:,.0f}/yr in hidden subsidy.",
+        f"In the North East: £{ne:,.0f}. Same national system. {lon/ne:.0f}× difference.")
+    _footnote(fig,
+        "ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25 × MHCLG Table 100. "
+        "Stock-weighted average subsidy per social unit, annualised.")
     _save(fig, "02_per_unit_subsidy")
 
 
 # ── Chart 3: Employer wage subsidy ────────────────────────────────────────────
 
 def chart_employer_subsidy(summary: pd.DataFrame, long: pd.DataFrame) -> None:
-    """Total annual employer labour saving by region."""
-    GROSS_UP   = 1 / (1 - 0.28)
-    REGION_ORDER = [
-        "North East", "Yorkshire and The Humber", "East Midlands",
-        "North West", "West Midlands", "South West",
-        "East of England", "South East", "London",
-    ]
+    GROSS_UP = 1 / (1 - 0.28)
 
     units_by_la = (
         long.dropna(subset=["social_units"])
         .groupby("la_code")["social_units"].sum()
-        .rename("total_social_units_rsh")
+        .rename("rsh_units")
     )
     df = summary.merge(units_by_la, on="la_code", how="left")
-    df["units"] = df["total_social_units_rsh"].fillna(df["total_social_stock"])
+    df["units"] = df["rsh_units"].fillna(df["total_social_stock"])
     df = df.dropna(subset=["subsidy_social_wtavg_annual", "units", "region"])
 
     reg = (
         df.groupby("region")
         .apply(lambda g: pd.Series({
-            "employer_saving_bn": (g["subsidy_social_wtavg_annual"] * g["units"]).sum()
-                                  * GROSS_UP / 1e9,
+            "saving_bn": (g["subsidy_social_wtavg_annual"] * g["units"]).sum()
+                         * GROSS_UP / 1e9,
         }), include_groups=False)
         .reset_index()
     )
-    reg = reg[reg["region"].isin(REGION_ORDER)].copy()
-    reg = reg.sort_values("employer_saving_bn")   # ascending so London is at top
+    reg = reg[reg["region"].isin(REGIONAL_POP)].sort_values("saving_bn")
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.20, "right": 0.84,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    _ax_base(ax)
 
-    colors = [RED if r == "London" else BLUE for r in reg["region"]]
-    bars = ax.barh(range(len(reg)), reg["employer_saving_bn"],
+    colors = [_region_color(r) for r in reg["region"]]
+    bars = ax.barh(range(len(reg)), reg["saving_bn"],
                    color=colors, height=0.62,
-                   edgecolor="white", linewidth=0.4)
+                   edgecolor=C["bg"], linewidth=0.8)
 
-    for bar, val, region in zip(bars, reg["employer_saving_bn"], reg["region"]):
-        ax.text(bar.get_width() + 0.15, bar.get_y() + bar.get_height() / 2,
-                f"£{val:.1f}bn",
-                va="center", ha="left", fontsize=12,
-                color=RED if region == "London" else "#333",
-                fontweight="bold" if region == "London" else "normal")
+    ax.set_xlim(0, reg["saving_bn"].max() * 1.26)
+    _bar_labels(ax, bars, reg["saving_bn"],
+                lambda v: f"£{v:.1f}bn", list(reg["region"]))
 
-    regions_short = [r.replace("Yorkshire and The Humber", "Yorks & Humber")
-                     for r in reg["region"]]
     ax.set_yticks(range(len(reg)))
-    ax.set_yticklabels(regions_short, fontsize=11)
-    for lbl, r in zip(ax.get_yticklabels(), reg["region"]):
-        if r == "London":
-            lbl.set_color(RED)
-            lbl.set_fontweight("bold")
-
-    ax.set_xlabel("Equivalent annual gross wage saving for employers (£bn)", fontsize=10, color="#444")
+    ax.set_yticklabels([_short(r) for r in reg["region"]], fontsize=11)
+    _ytick_style(ax, list(reg["region"]))
     ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"£{v:.0f}bn"))
-    ax.set_xlim(0, reg["employer_saving_bn"].max() * 1.22)
-    ax.tick_params(labelsize=10)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="y", left=False)
+    ax.set_xlabel("Equivalent annual gross wage saving for employers (£bn)")
 
-    lon_val = reg.loc[reg["region"] == "London", "employer_saving_bn"].iloc[0]
-    ax.set_title(
-        f"Social housing is a £{lon_val:.1f}bn/yr wage subsidy to London employers.\n"
-        "Workers live at below-market rents; their employers don't have to pay market-reflective wages.",
-        fontsize=14, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: ONS PRMS × RSH SDR 2024–25 × MHCLG Table 100. "
-        "Gross-up at 1.39× (28% effective marginal tax + NI) converts net rent gap to gross wage equivalent.",
-        fontsize=8, color="#999",
-    )
+    lon_v = reg.loc[reg["region"] == "London", "saving_bn"].iloc[0]
+    _title(ax,
+        f"Social housing is a £{lon_v:.1f}bn/yr wage subsidy to London employers.",
+        "Workers live at below-market rents; employers don't have to pay "
+        "wages that reflect London's true cost of living.")
+    _footnote(fig,
+        "ONS PRMS × RSH SDR 2024–25 × MHCLG Table 100. "
+        "Gross-up at 1.39× (28% effective marginal rate) converts net rent gap "
+        "to equivalent gross wage.")
     _save(fig, "03_employer_subsidy")
 
 
 # ── Chart 4: Social Rent completions collapse ──────────────────────────────────
 
 def chart_supply_collapse() -> None:
-    """Stacked area: SR completions 1991–2025."""
     df = pd.read_csv(RAW / "ahs_open_data.csv", low_memory=False)
     df = df[df["Completions"] == "Completion"].copy()
     df["year_start"] = df["Year"].str[:4].astype(int)
@@ -270,78 +345,73 @@ def chart_supply_collapse() -> None:
         if t not in annual.columns:
             annual[t] = 0
 
-    x  = annual["year_start"].values
+    x   = annual["year_start"].values
     sr  = annual["Social Rent"].values
     ar  = annual["Affordable Rent"].values
     lar = annual["London Affordable Rent"].values
 
     peak_sr  = sr.max()
-    peak_yr  = x[sr.argmax()]
-    cur_sr   = annual.loc[annual["year_start"] == 2024, "Social Rent"].values[0]
-    trough_sr = sr.min()
-    trough_yr = x[sr.argmin()]
+    peak_yr  = int(x[sr.argmax()])
+    cur_sr   = int(annual.loc[annual["year_start"] == 2024, "Social Rent"].values[0])
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.09, "right": 0.97,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    ax.set_facecolor(C["bg"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(C["divider"])
+    ax.spines["bottom"].set_color(C["divider"])
+    ax.grid(axis="y", color=C["grid"], linewidth=0.65, zorder=0)
+    ax.set_axisbelow(True)
 
     ax.stackplot(x, sr, ar, lar,
-                 labels=["Social Rent", "Affordable Rent", "London Affordable Rent"],
-                 colors=[BLUE, ORANGE, "#6aafe6"], alpha=0.85)
+                 labels=["Social Rent", "Affordable Rent",
+                         "London Affordable Rent"],
+                 colors=[C["sr"], C["ar"], C["lar"]], alpha=0.88)
 
     ax.set_xlim(x.min(), x.max())
     ax.set_ylim(0)
-    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v/1000:.0f}k"))
-    ax.set_ylabel("Completions per year", fontsize=11, color="#444")
+    ax.yaxis.set_major_formatter(
+        mticker.FuncFormatter(lambda v, _: f"{v/1000:.0f}k"))
+    ax.set_ylabel("Completions per year", color=C["sub"])
     ax.tick_params(labelsize=10)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
 
-    # Peak annotation — place to the right so it clears the title
-    ax.annotate(
+    # Peak annotation — right of peak, below the top
+    _annotate(ax,
         f"Peak: {peak_sr/1000:.0f}k/yr ({peak_yr})",
-        xy=(peak_yr, peak_sr), xytext=(peak_yr + 6, peak_sr - 8000),
-        fontsize=9, color=BLUE, fontweight="bold",
-        arrowprops=dict(arrowstyle="->", color=BLUE, lw=0.9),
-        bbox=dict(boxstyle="round,pad=0.25", fc=WHITE, ec=BLUE, alpha=0.9, lw=0.8),
-    )
-    # 2012 policy line
-    ax.axvline(2011, color=GREY, lw=1, linestyle=":", alpha=0.7)
-    ax.text(2011.3, ax.get_ylim()[1] * 0.82,
-            "2011–12:\nAffordable Rent\nintroduced",
-            fontsize=8, color="#666", va="top")
-    # Current level
-    ax.annotate(
-        f"{cur_sr/1000:.0f}k/yr\n(2024–25)\n{cur_sr/peak_sr*100:.0f}% of peak",
-        xy=(2024, cur_sr), xytext=(2020, cur_sr + 14000),
-        fontsize=9, color=BLUE, fontweight="bold",
-        arrowprops=dict(arrowstyle="->", color=BLUE, lw=0.9),
-        bbox=dict(boxstyle="round,pad=0.25", fc=WHITE, ec=BLUE, alpha=0.9, lw=0.8),
-    )
+        xy=(peak_yr, peak_sr),
+        xytext=(peak_yr + 7, peak_sr * 0.72),
+        color=C["sr"])
 
-    ax.legend(fontsize=10, loc="upper right", framealpha=0.9, edgecolor="#ddd")
-    ax.set_title(
-        f"England built {peak_sr/1000:.0f},000 Social Rent homes a year in the early 1990s. "
-        f"Now: {cur_sr/1000:.0f},000.\n"
-        "The replacement tenure (Affordable Rent) is cheaper to build but costs tenants far more.",
-        fontsize=13.5, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: MHCLG Affordable Housing Supply statistics 1991–2025.",
-        fontsize=8, color="#999",
-    )
+    # Policy marker
+    ax.axvline(2011, color=C["grey"], lw=1, linestyle=":", alpha=0.7)
+    ax.text(2011.4, ax.get_ylim()[1] * 0.80,
+            "2011–12: Affordable\nRent introduced\nat up to 80% market",
+            fontsize=8, color=C["sub"], va="top")
+
+    # Current level
+    _annotate(ax,
+        f"{cur_sr/1000:.0f}k/yr in 2024–25\n({cur_sr/peak_sr*100:.0f}% of peak)",
+        xy=(2024, cur_sr),
+        xytext=(2020, cur_sr + 18000),
+        color=C["sr"])
+
+    ax.legend(loc="upper right", framealpha=0.97)
+    _title(ax,
+        f"England built {peak_sr/1000:.0f},000 Social Rent homes a year in 1992. Now: {cur_sr/1000:.0f},000.",
+        "The replacement tenure costs tenants far more — and the collapse is not self-correcting.")
+    _footnote(fig, "MHCLG Affordable Housing Supply statistics 1991–2025.")
     _save(fig, "04_supply_collapse")
 
 
-# ── Chart 5: "Affordable" Rent in London vs market rent in Northern cities ─────
+# ── Chart 5: North vs London — homes and subsidy ──────────────────────────────
 
 def chart_north_vs_london(summary: pd.DataFrame, long: pd.DataFrame) -> None:
-    """Stark side-by-side: London vs the entire North."""
     units_by_la = (
         long.dropna(subset=["social_units"])
-        .groupby("la_code")["social_units"].sum()
-        .rename("rsh_units")
+        .groupby("la_code")["social_units"].sum().rename("rsh_units")
     )
     df = summary.merge(units_by_la, on="la_code", how="left")
     df["units"] = df["rsh_units"].fillna(df["total_social_stock"])
@@ -357,277 +427,277 @@ def chart_north_vs_london(summary: pd.DataFrame, long: pd.DataFrame) -> None:
     )
 
     north_regions = ["North East", "North West", "Yorkshire and The Humber"]
-    london = reg[reg["region"] == "London"].iloc[0]
-    north  = reg[reg["region"].isin(north_regions)]
-    north_bn    = north["total_bn"].sum()
-    north_units = north["units"].sum()
-    lon_bn      = london["total_bn"]
-    lon_units   = london["units"]
+    london    = reg[reg["region"] == "London"].iloc[0]
+    north     = reg[reg["region"].isin(north_regions)]
+    north_bn  = north["total_bn"].sum()
+    north_u   = north["units"].sum()
+    lon_bn    = london["total_bn"]
+    lon_u     = london["units"]
 
-    # Four grouped bars: homes (units, in 100ks) and subsidy (£bn) for each zone
     fig, axes = plt.subplots(1, 2, figsize=FIGSIZE,
-                             gridspec_kw={"wspace": 0.38})
-    fig.patch.set_facecolor(WHITE)
+                             gridspec_kw={"wspace": 0.32, "left": 0.06,
+                                          "right": 0.96, "top": 0.82,
+                                          "bottom": 0.14})
+    fig.patch.set_facecolor(C["bg"])
+
+    labels = ["London", "The North\n(NE + NW + Yorks)"]
+    bar_colors = [C["london"], C["north"]]
+    x = np.array([0, 1])
+    w = 0.50
 
     for ax in axes:
-        ax.set_facecolor(WHITE)
+        ax.set_facecolor(C["bg"])
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_color(C["divider"])
         ax.tick_params(axis="y", left=False, labelleft=False)
-        ax.tick_params(axis="x", labelsize=11)
+        ax.tick_params(axis="x", labelsize=10, colors=C["sub"])
+        ax.grid(axis="y", color=C["grid"], linewidth=0.65, zorder=0)
+        ax.set_axisbelow(True)
 
-    labels = ["London", "The North\n(NE + NW + Yorks)"]
-    x = np.array([0, 1])
-    bar_w = 0.45
-
-    # Left panel: social homes (hundreds of thousands)
-    ax_homes = axes[0]
-    homes_vals = [lon_units / 1e5, north_units / 1e5]
-    bars = ax_homes.bar(x, homes_vals, width=bar_w,
-                        color=[RED, BLUE], edgecolor="white", linewidth=0.5)
-    for bar, val in zip(bars, [lon_units, north_units]):
-        ax_homes.text(bar.get_x() + bar.get_width() / 2,
-                      bar.get_height() + 0.08,
-                      f"{val/1e6:.2f}m homes",
-                      ha="center", va="bottom", fontsize=13, fontweight="bold",
-                      color=bar.get_facecolor())
-    ax_homes.set_xticks(x)
-    ax_homes.set_xticklabels(labels, fontsize=12)
-    ax_homes.get_xticklabels()[0].set_color(RED)
-    ax_homes.get_xticklabels()[0].set_fontweight("bold")
-    ax_homes.set_ylim(0, max(homes_vals) * 1.3)
-    ax_homes.set_ylabel("Social homes (100,000s)", fontsize=10, color="#555")
-    ax_homes.yaxis.set_major_formatter(
+    # ── Left: social homes
+    ax_h = axes[0]
+    vals_h = [lon_u / 1e5, north_u / 1e5]
+    b1 = ax_h.bar(x, vals_h, width=w, color=bar_colors,
+                  edgecolor=C["bg"], linewidth=0.8)
+    for bar, raw, col in zip(b1, [lon_u, north_u], bar_colors):
+        ax_h.text(bar.get_x() + w / 2, bar.get_height() + max(vals_h) * 0.03,
+                  f"{raw/1e6:.2f}m", ha="center", va="bottom",
+                  fontsize=16, fontweight="bold", color=col)
+    ax_h.set_xticks(x)
+    ax_h.set_xticklabels(labels, fontsize=12)
+    ax_h.get_xticklabels()[0].set_color(C["london"])
+    ax_h.get_xticklabels()[0].set_fontweight("bold")
+    ax_h.set_ylim(0, max(vals_h) * 1.30)
+    ax_h.yaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: f"{v*100:.0f}k"))
-    ax_homes.set_title("Social homes", fontsize=12, color="#444", pad=6)
+    ax_h.set_title("Social homes", fontsize=12, color=C["sub"], pad=6)
 
-    # Right panel: annual subsidy (£bn)
-    ax_sub = axes[1]
-    sub_vals = [lon_bn, north_bn]
-    bars2 = ax_sub.bar(x, sub_vals, width=bar_w,
-                       color=[RED, BLUE], edgecolor="white", linewidth=0.5)
-    for bar, val in zip(bars2, sub_vals):
-        ax_sub.text(bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.12,
-                    f"£{val:.1f}bn/yr",
-                    ha="center", va="bottom", fontsize=13, fontweight="bold",
-                    color=bar.get_facecolor())
-    ax_sub.set_xticks(x)
-    ax_sub.set_xticklabels(labels, fontsize=12)
-    ax_sub.get_xticklabels()[0].set_color(RED)
-    ax_sub.get_xticklabels()[0].set_fontweight("bold")
-    ax_sub.set_ylim(0, max(sub_vals) * 1.3)
-    ax_sub.set_ylabel("Annual implicit subsidy", fontsize=10, color="#555")
-    ax_sub.yaxis.set_major_formatter(
+    # ── Right: annual subsidy
+    ax_s = axes[1]
+    vals_s = [lon_bn, north_bn]
+    b2 = ax_s.bar(x, vals_s, width=w, color=bar_colors,
+                  edgecolor=C["bg"], linewidth=0.8)
+    for bar, val, col in zip(b2, vals_s, bar_colors):
+        ax_s.text(bar.get_x() + w / 2, bar.get_height() + max(vals_s) * 0.03,
+                  f"£{val:.1f}bn/yr", ha="center", va="bottom",
+                  fontsize=16, fontweight="bold", color=col)
+    ax_s.set_xticks(x)
+    ax_s.set_xticklabels(labels, fontsize=12)
+    ax_s.get_xticklabels()[0].set_color(C["london"])
+    ax_s.get_xticklabels()[0].set_fontweight("bold")
+    ax_s.set_ylim(0, max(vals_s) * 1.30)
+    ax_s.yaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: f"£{v:.0f}bn"))
-    ax_sub.set_title("Annual implicit subsidy", fontsize=12, color="#444", pad=6)
-    ax_sub.tick_params(axis="y", left=True, labelleft=True)
+    ax_s.set_title("Annual implicit subsidy", fontsize=12, color=C["sub"], pad=6)
+    ax_s.tick_params(axis="y", left=True, labelleft=True)
 
     fig.suptitle(
-        f"The North has {north_units/lon_units:.0f}× as many social homes as London.\n"
+        f"The North has {north_u/lon_u:.0f}× as many social homes as London. "
         f"It gets {lon_bn/north_bn:.1f}× less money.",
-        fontsize=15, fontweight="bold", color="#111", y=1.01,
+        fontsize=15.5, fontweight="bold", color=C["text"], y=0.97,
     )
-    fig.text(
-        0.5, -0.03,
-        "Source: ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25 × MHCLG Table 100. "
-        '"The North" = North East + North West + Yorkshire and The Humber.',
-        ha="center", fontsize=8, color="#999",
-    )
+    _footnote(fig,
+        'ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25 × MHCLG Table 100. '
+        '"The North" = North East + North West + Yorkshire and The Humber.')
     _save(fig, "05_north_vs_london")
 
 
-# ── Chart 6: The 44:1 subsidy lottery ─────────────────────────────────────────
+# ── Chart 6: The subsidy lottery — regional beeswarm ─────────────────────────
+# Redesigned from a 2D scatter to a regional strip/forest plot.
+# Each row = one region. Each dot = one LA. Diamond = regional median.
+# Shows a 1D distribution of a 1D quantity, grouped by region.
 
 def chart_subsidy_lottery(summary: pd.DataFrame) -> None:
-    """Strip chart: per-unit subsidy across all LAs, top/bottom highlighted."""
-    df = summary.dropna(subset=["subsidy_social_wtavg_annual", "region"]).copy()
-    df["is_london"] = df["region"] == "London"
-    df_s = df.sort_values("subsidy_social_wtavg_annual")
+    df = summary.dropna(subset=["subsidy_social_wtavg_annual",
+                                "region", "la_name"]).copy()
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    NINE = {
+        "North East", "North West", "Yorkshire and The Humber",
+        "East Midlands", "West Midlands", "South West",
+        "East of England", "South East", "London",
+    }
+    df = df[df["region"].isin(NINE)]
 
-    y_other  = df_s[~df_s["is_london"]]["subsidy_social_wtavg_annual"].values
-    y_london = df_s[df_s["is_london"]]["subsidy_social_wtavg_annual"].values
+    # Regions ordered lowest to highest median — NE at bottom, London at top
+    region_order = (
+        df.groupby("region")["subsidy_social_wtavg_annual"]
+        .median().sort_values().index.tolist()
+    )
 
-    x_other  = np.random.default_rng(42).uniform(0.6, 1.4, len(y_other))
-    x_london = np.random.default_rng(42).uniform(0.6, 1.4, len(y_london))
+    rng = np.random.default_rng(42)
 
-    ax.scatter(y_other,  x_other,  s=18, alpha=0.45, color=BLUE,
-               zorder=2, label="Other regions")
-    ax.scatter(y_london, x_london, s=30, alpha=0.80, color=RED,
-               zorder=3, label="London")
-
-    # Annotate top and bottom
-    top_row = df_s.nlargest(1, "subsidy_social_wtavg_annual").iloc[0]
-    bot_row = df_s.nsmallest(1, "subsidy_social_wtavg_annual").iloc[0]
-
-    for row, side in [(top_row, "top"), (bot_row, "bot")]:
-        xv = row["subsidy_social_wtavg_annual"]
-        yv = 1.0
-        color = RED if row["is_london"] else BLUE
-        yt = 1.55 if side == "top" else 0.45
-        ax.annotate(
-            f"{row['la_name']}\n£{xv:,.0f}/unit/yr",
-            xy=(xv, yv), xytext=(xv, yt),
-            fontsize=9.5, color=color, fontweight="bold", ha="center",
-            arrowprops=dict(arrowstyle="->", color=color, lw=0.9),
-            bbox=dict(boxstyle="round,pad=0.3", fc=WHITE, ec=color,
-                      alpha=0.95, lw=0.8),
-        )
-
-    ratio = top_row["subsidy_social_wtavg_annual"] / bot_row["subsidy_social_wtavg_annual"]
-
-    ax.set_xlabel("Annual implicit subsidy per social unit (£/yr)", fontsize=11, color="#444")
-    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"£{v:,.0f}"))
-    ax.tick_params(axis="x", labelsize=10)
-    ax.set_yticks([])
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.20, "right": 0.92,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    ax.set_facecolor(C["bg"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
-    ax.set_ylim(0, 2)
-    ax.legend(fontsize=10, loc="upper left", framealpha=0.9, edgecolor="#ddd")
+    ax.spines["bottom"].set_color(C["divider"])
+    ax.grid(axis="x", color=C["grid"], linewidth=0.65, zorder=0)
+    ax.set_axisbelow(True)
 
-    ax.set_title(
-        f"The same national system. A {ratio:.0f}:1 difference in what each tenant receives.\n"
-        f"K&C: £{top_row['subsidy_social_wtavg_annual']:,.0f}/yr. "
-        f"Redcar: £{bot_row['subsidy_social_wtavg_annual']:,.0f}/yr. "
-        "Every dot is a local authority.",
-        fontsize=13.5, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25. "
-        "290 English local authorities. Subsidy = (market − social rent) × stock, annualised per unit.",
-        fontsize=8, color="#999",
-    )
+    for i, region in enumerate(region_order):
+        rdata = df[df["region"] == region]["subsidy_social_wtavg_annual"].values
+        col   = _region_color(region)
+
+        # Range bar: 10th–90th percentile
+        p10, p90 = np.percentile(rdata, [10, 90])
+        ax.plot([p10, p90], [i, i], color=col, linewidth=2.0,
+                alpha=0.30, solid_capstyle="round", zorder=1)
+
+        # Individual LA dots (jittered vertically)
+        y_jit = i + rng.uniform(-0.30, 0.30, len(rdata))
+        ax.scatter(rdata, y_jit, s=16, alpha=0.45, color=col,
+                   linewidths=0, zorder=2)
+
+        # Median diamond
+        med = np.median(rdata)
+        ax.scatter([med], [i], s=90, color=col, marker="D",
+                   edgecolors="white", linewidths=0.8, zorder=5)
+
+        # Median label
+        ax.text(med, i + 0.40, f"£{med:,.0f}",
+                ha="center", va="bottom", fontsize=7.5,
+                color=col, fontweight="bold")
+
+    # Label K&C (highest) and Redcar (lowest)
+    top = df.nlargest(1, "subsidy_social_wtavg_annual").iloc[0]
+    bot = df.nsmallest(1, "subsidy_social_wtavg_annual").iloc[0]
+    top_i = region_order.index(top["region"])
+    bot_i = region_order.index(bot["region"])
+
+    _annotate(ax,
+        f"{top['la_name']}\n£{top['subsidy_social_wtavg_annual']:,.0f}/yr",
+        xy=(top["subsidy_social_wtavg_annual"], top_i),
+        xytext=(top["subsidy_social_wtavg_annual"] * 0.80, top_i + 1.4),
+        color=C["london"], ha="center")
+
+    _annotate(ax,
+        f"{bot['la_name']}\n£{bot['subsidy_social_wtavg_annual']:,.0f}/yr",
+        xy=(bot["subsidy_social_wtavg_annual"], bot_i),
+        xytext=(bot["subsidy_social_wtavg_annual"] + 2800, bot_i - 1.3),
+        color=C["north"], ha="left")
+
+    ax.set_yticks(range(len(region_order)))
+    ax.set_yticklabels([_short(r) for r in region_order], fontsize=10.5)
+    _ytick_style(ax, region_order)
+    ax.tick_params(axis="y", left=False)
+    ax.set_ylim(-0.8, len(region_order) - 0.3)
+
+    ax.xaxis.set_major_formatter(
+        mticker.FuncFormatter(lambda v, _: f"£{v:,.0f}"))
+    ax.set_xlabel("Annual implicit subsidy per social home (£/yr)")
+
+    ratio = (top["subsidy_social_wtavg_annual"]
+             / bot["subsidy_social_wtavg_annual"])
+    _title(ax,
+        f"The same national system. A {ratio:.0f}:1 lottery.",
+        "Every dot is a local authority. Diamonds show regional medians.")
+    _footnote(fig,
+        "ONS PRMS (Oct 2022–Sep 2023) × RSH SDR 2024–25. "
+        "290 English local authorities. Per-unit annual subsidy, stock-weighted.")
     _save(fig, "06_subsidy_lottery")
 
 
-# ── Chart 7: Regional supply vs stock share ────────────────────────────────────
+# ── Chart 7: Supply gap — completions vs stock share ──────────────────────────
+# Redesigned as a diverging gap chart (completions share − stock share).
+# Bars left of zero = underbuilding; bars right = overbuilding.
 
 def chart_supply_vs_stock() -> None:
-    """Where is Social Rent actually being built vs where the stock is."""
     df = pd.read_csv(RAW / "ahs_open_data.csv", low_memory=False)
     df = df[df["Completions"] == "Completion"].copy()
     df["year_start"] = df["Year"].str[:4].astype(int)
 
-    sr = df[(df["Tenure"] == "Social Rent") & (df["year_start"] >= 2020)]
+    sr   = df[(df["Tenure"] == "Social Rent") & (df["year_start"] >= 2020)]
     comp = sr.groupby("Region name")["Units"].sum()
 
-    summary = pd.read_csv(PROCESSED / "subsidy_summary_by_la.csv")
+    summ = pd.read_csv(PROCESSED / "subsidy_summary_by_la.csv")
     stock = (
-        summary.dropna(subset=["region"])
+        summ.dropna(subset=["region"])
         .groupby("region")["total_social_stock"].sum()
-        .rename(index={"Yorkshire and The Humber": "Yorkshire and The Humber"})
     )
 
-    # Align names
-    name_map = {r: r for r in comp.index}
     regions = [r for r in comp.index if r in stock.index]
-
-    total_comp  = comp[regions].sum()
-    total_stock = stock[regions].sum()
+    total_c = comp[regions].sum()
+    total_s = stock[regions].sum()
 
     data = pd.DataFrame({
-        "region":   regions,
-        "comp_pct": [comp[r] / total_comp * 100  for r in regions],
-        "stock_pct":[stock[r] / total_stock * 100 for r in regions],
+        "region":    regions,
+        "comp_pct":  [comp[r] / total_c * 100  for r in regions],
+        "stock_pct": [stock[r] / total_s * 100 for r in regions],
     })
     data["gap"] = data["comp_pct"] - data["stock_pct"]
-    data = data.sort_values("gap")
+    data = data.sort_values("gap").reset_index(drop=True)
 
-    north = {"North East", "North West", "Yorkshire and The Humber"}
-
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
-
-    y = np.arange(len(data))
-    h = 0.35
-
-    comp_colors  = [RED   if r in north else ORANGE for r in data["region"]]
-    stock_colors = [RED   if r in north else BLUE   for r in data["region"]]
-
-    ax.barh(y + h / 2, data["comp_pct"],  height=h, color=comp_colors,
-            alpha=0.88, label="Share of Social Rent completions (2020–24)")
-    ax.barh(y - h / 2, data["stock_pct"], height=h, color=stock_colors,
-            alpha=0.40, label="Share of existing Social Rent stock")
-
-    for i, (_, row) in enumerate(data.iterrows()):
-        is_north = row["region"] in north
-        ax.text(max(row["comp_pct"], row["stock_pct"]) + 0.3, i,
-                f'{row["comp_pct"]:.1f}% built  /  {row["stock_pct"]:.1f}% of stock',
-                va="center", fontsize=8,
-                color=RED if is_north else "#555",
-                fontweight="bold" if is_north else "normal")
-
-    regions_short = [r.replace("Yorkshire and The Humber", "Yorks & Humber")
-                     for r in data["region"]]
-    ax.set_yticks(y)
-    ax.set_yticklabels(regions_short, fontsize=11)
-    for lbl, r in zip(ax.get_yticklabels(), data["region"]):
-        if r in north:
-            lbl.set_color(RED)
-            lbl.set_fontweight("bold")
-
-    ax.axvline(0, color="#ccc", lw=0.5)
-    ax.set_xlabel("Share of England total (%)", fontsize=11, color="#444")
-    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:.0f}%"))
-    ax.set_xlim(0, data[["comp_pct","stock_pct"]].max().max() * 1.55)
-    ax.tick_params(labelsize=10)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.22, "right": 0.94,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    ax.set_facecolor(C["bg"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
+    ax.spines["bottom"].set_color(C["divider"])
+    ax.grid(axis="x", color=C["grid"], linewidth=0.65, zorder=0)
+    ax.set_axisbelow(True)
+
+    y = np.arange(len(data))
+
+    for i, row in data.iterrows():
+        color = C["gap_pos"] if row["gap"] > 0 else C["gap_neg"]
+        if row["region"] in NORTH:
+            color = C["london"]
+        ax.barh(i, row["gap"], height=0.58, color=color,
+                alpha=0.88, edgecolor=C["bg"], linewidth=0.5)
+
+    # Label Northern regions only; place just right of the zero line to avoid y-axis overlap
+    for i, row in data.iterrows():
+        if row["region"] not in NORTH:
+            continue
+        # Position label inside the positive (empty) side, anchored at 0.15pp right of zero
+        ax.text(0.20, i,
+                f'{row["comp_pct"]:.1f}% built / {row["stock_pct"]:.1f}% of stock',
+                va="center", ha="left", fontsize=8.5,
+                color=C["london"], fontweight="bold")
+
+    # Zero reference
+    ax.axvline(0, color=C["divider"], lw=1.2, zorder=3)
+
+    ax.set_yticks(y)
+    ax.set_yticklabels([_short(r) for r in data["region"]], fontsize=10.5)
+    _ytick_style(ax, list(data["region"]))
     ax.tick_params(axis="y", left=False)
+    ax.xaxis.set_major_formatter(
+        mticker.FuncFormatter(lambda v, _: f"{v:+.1f}pp"))
+    ax.set_xlabel("Completions share minus stock share (percentage points)")
 
-    # Custom legend
-    import matplotlib.patches as mp
+    # Legend patches
     patches = [
-        mp.Patch(color=ORANGE, alpha=0.88, label="Completions share (2020–24)"),
-        mp.Patch(color=BLUE,   alpha=0.40, label="Stock share"),
-        mp.Patch(color=RED,    alpha=0.88, label="Northern regions"),
+        mpatches.Patch(color=C["london"],   label="Northern regions (underbuilding)"),
+        mpatches.Patch(color=C["gap_neg"],  label="Other underbuilders"),
+        mpatches.Patch(color=C["gap_pos"],  label="Overbuilders — mostly via S106"),
     ]
-    ax.legend(handles=patches, fontsize=9, loc="lower right",
-              framealpha=0.9, edgecolor="#ddd")
+    ax.legend(handles=patches, loc="lower right", fontsize=9)
 
-    ne_comp  = data.loc[data["region"] == "North East", "comp_pct"].iloc[0]
-    ne_stock = data.loc[data["region"] == "North East", "stock_pct"].iloc[0]
-    nw_comp  = data.loc[data["region"] == "North West", "comp_pct"].iloc[0]
-    nw_stock = data.loc[data["region"] == "North West", "stock_pct"].iloc[0]
-
-    ax.set_title(
-        "The North is falling further behind: it holds the stock but isn't building.\n"
-        f"North East: {ne_stock:.1f}% of stock, {ne_comp:.1f}% of completions. "
-        f"North West: {nw_stock:.1f}% of stock, {nw_comp:.1f}% of completions.",
-        fontsize=13, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: MHCLG Affordable Housing Supply statistics 2020–24 × MHCLG Table 100. "
-        "Social Rent completions only. Darker bars = completions share; lighter = stock share.",
-        fontsize=8, color="#999",
-    )
+    ne  = data.loc[data["region"] == "North East"]
+    nw  = data.loc[data["region"] == "North West"]
+    ne_str = f"NE: {ne['comp_pct'].iloc[0]:.1f}% built, {ne['stock_pct'].iloc[0]:.1f}% of stock"
+    _title(ax,
+        "The North holds the stock but isn't building.",
+        f"{ne_str} — its completions rate is less than a third of its fair share.")
+    _footnote(fig,
+        "MHCLG Affordable Housing Supply 2020–24 × MHCLG Table 100. "
+        "Social Rent completions only. Zero line = building at proportionate rate.",
+        note="Overbuilding in South West and West Midlands is driven "
+             "by Section 106 planning obligations, not government grant.")
     _save(fig, "07_supply_vs_stock")
 
 
-# ── Chart 8: Government-grant Social Rent investment per capita, NE vs London ──
-
-REGIONAL_POP = {
-    "North East":                  2_647_000,
-    "North West":                  7_417_000,
-    "Yorkshire and The Humber":    5_480_000,
-    "East Midlands":               4_934_000,
-    "West Midlands":               5_902_000,
-    "East of England":             6_335_000,
-    "London":                      8_796_000,
-    "South East":                  9_180_000,
-    "South West":                  5_701_000,
-}
-
+# ── Chart 8: Govt-grant investment — NE vs London ─────────────────────────────
 
 def _grant_units() -> pd.DataFrame:
     df = pd.read_csv(RAW / "ahs_open_data.csv", low_memory=False)
@@ -652,142 +722,125 @@ def _grant_units() -> pd.DataFrame:
 
 
 def chart_grant_investment_ne_london() -> None:
-    """Year-by-year govt-grant Social Rent completions per 100k: NE vs London."""
-    grant = _grant_units()
-
+    grant  = _grant_units()
     years  = sorted(grant["year_start"].unique())
-    ne_p   = grant[grant["Region name"] == "North East"].set_index("year_start")["per_100k"].reindex(years, fill_value=0)
-    lon_p  = grant[grant["Region name"] == "London"].set_index("year_start")["per_100k"].reindex(years, fill_value=0)
+    ne_p   = (grant[grant["Region name"] == "North East"]
+              .set_index("year_start")["per_100k"]
+              .reindex(years, fill_value=0))
+    lon_p  = (grant[grant["Region name"] == "London"]
+              .set_index("year_start")["per_100k"]
+              .reindex(years, fill_value=0))
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.09, "right": 0.97,
+                                        "top": 0.87, "bottom": 0.14})
+    fig.patch.set_facecolor(C["bg"])
+    ax.set_facecolor(C["bg"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(C["divider"])
+    ax.spines["bottom"].set_color(C["divider"])
+    ax.grid(axis="y", color=C["grid"], linewidth=0.65, zorder=0)
+    ax.set_axisbelow(True)
 
-    ax.fill_between(years, lon_p, alpha=0.12, color=RED)
-    ax.fill_between(years, ne_p,  alpha=0.18, color=BLUE)
-    ax.plot(years, lon_p, color=RED,  linewidth=2.5, label="London",    zorder=3)
-    ax.plot(years, ne_p,  color=BLUE, linewidth=2.5, label="North East", zorder=3)
+    ax.fill_between(years, lon_p, alpha=0.10, color=C["london"])
+    ax.fill_between(years, ne_p,  alpha=0.15, color=C["north"])
+    ax.plot(years, lon_p, color=C["london"], linewidth=2.5,
+            label="London", zorder=3)
+    ax.plot(years, ne_p,  color=C["north"],  linewidth=2.5,
+            label="North East", zorder=3)
 
-    # Annotate the most egregious years
-    ax.annotate("NE: 0 homes\nLondon: 2.8/100k",
-                xy=(2017, 0), xytext=(2017.2, 22),
-                fontsize=8.5, color="#555",
-                arrowprops=dict(arrowstyle="->", color="#999", lw=0.8),
-                bbox=dict(boxstyle="round,pad=0.25", fc=WHITE, ec="#ccc", alpha=0.9))
+    # Annotate 2017 (NE = 0)
+    ax.annotate(
+        "North East: 0 homes\nLondon: 2.8 per 100k",
+        xy=(2017, 0), xytext=(2015.2, 28),
+        fontsize=8.5, color=C["sub"],
+        arrowprops=dict(arrowstyle="-|>", color=C["sub"], lw=0.8),
+        bbox=dict(boxstyle="round,pad=0.28", fc=C["bg"],
+                  ec=C["divider"], alpha=0.97, lw=0.8),
+    )
 
+    # London peak
     peak_yr = int(lon_p.idxmax())
     peak_v  = lon_p[peak_yr]
-    ax.annotate(f"London peak:\n{peak_v:.0f}/100k ({peak_yr})",
-                xy=(peak_yr, peak_v), xytext=(peak_yr - 3, peak_v - 25),
-                fontsize=8.5, color=RED, fontweight="bold",
-                arrowprops=dict(arrowstyle="->", color=RED, lw=0.8),
-                bbox=dict(boxstyle="round,pad=0.25", fc=WHITE, ec=RED, alpha=0.9, lw=0.8))
+    _annotate(ax,
+        f"London peak: {peak_v:.0f}/100k ({peak_yr})",
+        xy=(peak_yr, peak_v),
+        xytext=(peak_yr + 3, peak_v - 28),
+        color=C["london"])
 
     ax.set_xlim(years[0], years[-1])
     ax.set_ylim(bottom=0)
-    ax.set_ylabel("Government-grant Social Rent completions\nper 100,000 people", fontsize=10, color="#444")
-    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:.0f}"))
+    ax.set_ylabel("Govt-grant Social Rent completions\nper 100,000 people",
+                  color=C["sub"])
     ax.tick_params(labelsize=10)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.legend(fontsize=11, loc="upper right", framealpha=0.9, edgecolor="#ddd")
+    ax.legend(loc="upper right")
 
-    ne_total  = int(ne_p.sum() * (REGIONAL_POP["North East"]  / 100_000))
-    lon_total = int(lon_p.sum() * (REGIONAL_POP["London"] / 100_000))
-    ne_cum    = ne_p.sum()
-    lon_cum   = lon_p.sum()
-
-    ax.set_title(
-        f"Over 15 years, London received {lon_cum/ne_cum:.1f}× more government-funded Social Rent\n"
-        f"homes per person than the North East. In 2017, the North East received zero.",
-        fontsize=13.5, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: MHCLG Affordable Housing Supply statistics 2009–2024. "
-        "Government grant = Homes England / GLA funded completions (excludes Section 106 and LA own funding). "
+    ne_cum  = ne_p.sum()
+    lon_cum = lon_p.sum()
+    _title(ax,
+        f"Over 15 years, London received {lon_cum/ne_cum:.1f}× more "
+        f"government-funded Social Rent homes per person.",
+        "In 2017 the North East received zero.")
+    _footnote(fig,
+        "MHCLG Affordable Housing Supply 2009–2024. "
+        "Government grant = HE/GLA funded completions only (excludes S106). "
         "Population: 2021 Census.",
-        fontsize=8, color="#999",
-    )
+        note="London's figure includes the GLA Mayor's Housing Programme — "
+             "a dedicated regional authority with no Northern equivalent.")
     _save(fig, "08_grant_investment_ne_london")
 
 
+# ── Chart 9: Govt-grant per capita — all regions ──────────────────────────────
+
 def chart_grant_per_capita_all_regions() -> None:
-    """Cumulative 2009-2024 govt-grant SR completions per 100k, all regions."""
     grant = _grant_units()
     reg = (
         grant.groupby("Region name")
         .apply(lambda g: pd.Series({
-            "total":    g["Units"].sum(),
-            "per_100k": (g["Units"].sum()) / (g["pop"].iloc[0] / 100_000),
+            "per_100k": g["Units"].sum() / (g["pop"].iloc[0] / 100_000),
         }), include_groups=False)
         .reset_index()
         .sort_values("per_100k")
     )
+    reg = reg[reg["Region name"].isin(REGIONAL_POP)].reset_index(drop=True)
 
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    fig.patch.set_facecolor(WHITE)
-    ax.set_facecolor(WHITE)
+    fig, ax = plt.subplots(figsize=FIGSIZE,
+                           gridspec_kw={"left": 0.20, "right": 0.84,
+                                        "top": 0.87, "bottom": 0.12})
+    fig.patch.set_facecolor(C["bg"])
+    _ax_base(ax)
 
-    north = {"North East", "North West", "Yorkshire and The Humber"}
-    colors = [RED if r == "London" else (BLUE if r in north else "#8ab4d4")
-              for r in reg["Region name"]]
-    bars = ax.barh(range(len(reg)), reg["per_100k"], color=colors,
-                   height=0.62, edgecolor="white", linewidth=0.4)
+    colors = [_region_color(r) for r in reg["Region name"]]
+    bars = ax.barh(range(len(reg)), reg["per_100k"],
+                   color=colors, height=0.62,
+                   edgecolor=C["bg"], linewidth=0.8)
 
-    for bar, val, region in zip(bars, reg["per_100k"], reg["Region name"]):
-        is_north = region in north
-        ax.text(bar.get_width() + 3, bar.get_y() + bar.get_height() / 2,
-                f"{val:.0f}",
-                va="center", ha="left", fontsize=11,
-                color=RED if region == "London" else (BLUE if is_north else "#555"),
-                fontweight="bold" if (region == "London" or is_north) else "normal")
+    ax.set_xlim(0, reg["per_100k"].max() * 1.22)
+    _bar_labels(ax, bars, reg["per_100k"],
+                lambda v: f"{v:.0f}", list(reg["Region name"]))
 
-    regions_short = [r.replace("Yorkshire and The Humber", "Yorks & Humber")
-                     for r in reg["Region name"]]
     ax.set_yticks(range(len(reg)))
-    ax.set_yticklabels(regions_short, fontsize=11)
-    for lbl, r in zip(ax.get_yticklabels(), reg["Region name"]):
-        if r == "London":
-            lbl.set_color(RED)
-            lbl.set_fontweight("bold")
-        elif r in north:
-            lbl.set_color(BLUE)
-            lbl.set_fontweight("bold")
+    ax.set_yticklabels([_short(r) for r in reg["Region name"]], fontsize=11)
+    _ytick_style(ax, list(reg["Region name"]))
+    ax.set_xlabel(
+        "Govt-grant Social Rent completions per 100,000 people, 2009–2024")
 
-    ax.set_xlabel("Government-grant Social Rent completions per 100,000 people, 2009–2024",
-                  fontsize=10, color="#444")
-    ax.set_xlim(0, reg["per_100k"].max() * 1.18)
-    ax.tick_params(labelsize=10)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="y", left=False)
+    lon_v = reg.loc[reg["Region name"] == "London",     "per_100k"].iloc[0]
+    ne_v  = reg.loc[reg["Region name"] == "North East", "per_100k"].iloc[0]
+    yk_v  = reg.loc[reg["Region name"] == "Yorkshire and The Humber",
+                    "per_100k"].iloc[0]
 
-    lon_v = reg.loc[reg["Region name"] == "London",    "per_100k"].iloc[0]
-    ne_v  = reg.loc[reg["Region name"] == "North East","per_100k"].iloc[0]
-    yk_v  = reg.loc[reg["Region name"] == "Yorkshire and The Humber","per_100k"].iloc[0]
-
-    ax.set_title(
-        f"London received {lon_v/ne_v:.1f}× more government-funded Social Rent per person\n"
-        f"than the North East, and {lon_v/yk_v:.1f}× more than Yorkshire, over 15 years.",
-        fontsize=13.5, fontweight="bold", color="#111", pad=14, loc="left",
-    )
-    fig.text(
-        0.01, 0.01,
-        "Source: MHCLG Affordable Housing Supply statistics 2009–2024. "
-        "Government grant = Homes England / GLA funded completions only. "
-        "Population: 2021 Census. Excludes Section 106 and local authority own funding.",
-        fontsize=8, color="#999",
-    )
-
-    # Footnote on GLA
-    fig.text(
-        0.01, 0.04,
-        "Note: London's figure includes the GLA Mayor's Housing Programme — a dedicated regional "
-        "authority with housing investment powers that no other English region has.",
-        fontsize=7.5, color="#888", style="italic",
-    )
+    _title(ax,
+        f"London received {lon_v/ne_v:.1f}× more government-funded Social Rent "
+        f"per person than the North East,",
+        f"and {lon_v/yk_v:.1f}× more than Yorkshire, over 15 years.")
+    _footnote(fig,
+        "MHCLG Affordable Housing Supply 2009–2024. "
+        "Excludes S106 and local authority own funding. "
+        "Population: 2021 Census.",
+        note="London's figure includes the GLA Mayor's Housing Programme — "
+             "a dedicated regional housing authority with no Northern equivalent.")
     _save(fig, "09_grant_per_capita_regions")
 
 
