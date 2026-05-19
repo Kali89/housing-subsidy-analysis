@@ -1,14 +1,91 @@
-# UK Social Housing Implicit Subsidy Analysis
+# England's Hidden Housing Subsidy
 
-Quantifying the implicit subsidy received by social and affordable rent tenants across all English local authorities, by comparing regulated rents to open market rents.
+England's social housing system delivers a **£21 billion annual implicit subsidy** — a transfer larger than the entire overseas aid budget that has never been voted on, never appears in any spending review, and is overwhelmingly concentrated in the wealthiest part of the country.
 
-## Key finding
+This repository quantifies that subsidy for every English local authority, maps its geographic distribution, and examines what it means for regional economic fairness.
 
-England's social housing stock delivers an implicit subsidy of roughly **£20–21 billion per year** to tenants — a transfer that never appears in any government budget line. The subsidy is concentrated in London and the South East, where the gap between market and social rents is widest.
+---
 
-## What is the implicit subsidy?
+## The argument
 
-Social and affordable rents are set by regulation well below market levels. The difference — what a tenant *would* have paid in the private market minus what they *actually* pay — is an implicit transfer from the public balance sheet (which provides the land, finance, and regulatory framework that makes below-market rents possible) to the tenant. It is directionally equivalent to a housing benefit payment, but flows through the asset rather than through public expenditure.
+Social and affordable rents are set by regulation well below market levels. The gap between what a tenant *would* pay on the open market and what they *actually* pay is an implicit transfer from the public balance sheet to the tenant. It is economically equivalent to a housing benefit payment, but it flows through the asset rather than through public expenditure — which is why it never appears in any budget.
+
+When you add up this gap across all 3.1 million social homes in England, the total is roughly **£21 billion per year**.
+
+The geographic distribution of that subsidy is not neutral. London receives **47% of the total** while holding only **19% of the social housing stock**. The South East adds a further 14%. Together, the two most expensive regions of England absorb **60% of the entire national subsidy** — more than the combined share of the North East, North West, Yorkshire, East Midlands, and West Midlands.
+
+This is not a rounding error. It is a structural feature of the system that has been compounding for decades and is not self-correcting.
+
+---
+
+## Key findings
+
+- **£21bn/yr** total implicit social housing subsidy across England, never appearing in any government budget
+- **London alone: £9.7bn/yr** — 47% of the national total from 19% of the stock
+- **London + South East: £12.5bn/yr** — 60% of the national total
+- **Kensington & Chelsea: £30,213/unit/year** in implicit subsidy — the highest of any LA
+- **Redcar & Cleveland: £694/unit/year** — the lowest. The same national system delivers **44× more** to a K&C tenant than to one in Redcar
+- The equivalent annual gross wage saving to London employers: **£13.5bn** — social housing allows businesses to pay wages that do not reflect the true cost of living in the city
+- England is building Social Rent homes at **0.22% of stock per year** — at that rate, the existing stock turns over every **462 years**
+- Social Rent completions have fallen **79% since their early-1990s peak** (57,000/yr → 12,000/yr). We are not building our way out of this
+
+---
+
+## The subsidy as a London employer benefit
+
+The conventional defence of social housing in high-cost cities is the "essential workers" argument: hospital staff, cleaners, and transport workers need affordable housing close to where they work. That argument is true as far as it goes. But it has a less comfortable implication that is rarely stated.
+
+If workers in central London can live at below-market housing costs because the public sector is bridging the gap, their employers do not have to pay wages that reflect the full cost of living there. Social housing in London is, in economic terms, a labour cost subsidy to London businesses. It expands the supply of affordable labour, keeps wages lower than a genuine market would require, and makes central London more economically competitive than it would otherwise be — at national expense.
+
+The gross-up calculation in this analysis estimates that London employers save the equivalent of **£13.5bn per year** in wages they would otherwise need to pay to attract workers at market housing costs. That is a subsidy larger than the entire budget for HS2's northern legs — which were cancelled. It is paid not by London employers, not from London's council tax, but effectively from the national balance sheet through the suppression of returns on publicly held housing assets.
+
+If this were an explicit payment — an annual grant from the Treasury to London businesses to offset their wage bills — the political scrutiny would be intense. It operates invisibly precisely because it runs through the housing market.
+
+---
+
+## The supply problem: it is not self-correcting
+
+The geographic distribution of social housing is essentially fixed by decades of construction decisions that are now nearly impossible to reverse. The stock turns over at 0.22% per year. Even if government redirected every new social home to the North and Midlands tomorrow, it would take many decades to materially change the distribution.
+
+New supply is making things worse, not better. Of the 12,000 Social Rent homes built in 2024, the majority were in London and the South East — where development economics for housing associations is more favourable but where the subsidy per unit is already highest. The North East, which has the worst renewal rate of any English region (0.07%/yr), is building virtually nothing.
+
+The replacement tenure — Affordable Rent at 80% of market — does not compress geographic inequality. It replicates it. A "social" tenant in Kensington paying Affordable Rent pays **£1,252/month**. A private tenant in Liverpool pays **£675/month** in an open market. The government-subsidised "affordable" home costs nearly twice as much as a genuine market home in the North.
+
+---
+
+## The hidden subsidy in context
+
+The standard counter-argument is that London is a net fiscal contributor — London generates roughly 22% of England's GDP and probably a larger share of national tax revenues, some of which flows to poorer regions through public spending. That argument is correct in broad outline but overstated in ways that matter for this analysis.
+
+Several large transfers to London do not appear on any intra-regional balance sheet:
+
+- **The implicit housing subsidy** (this analysis): ~£10bn/yr to London and the South East, entirely off-balance-sheet
+- **London Weighting**: Central government pays NHS staff, teachers, civil servants, police, and fire workers a London supplement — roughly £1.5–2bn/yr from national budgets to compensate for housing costs that are themselves partly a policy choice
+- **Infrastructure investment**: Transport for London has received substantially higher per-capita capital investment than any Northern region for decades. The Elizabeth Line alone cost ~£19bn. HS2 promised connectivity benefits to the North, delivered the southern sections at enormous cost, then cancelled the Manchester and Leeds legs
+- **National institutional concentration**: The British Museum, National Gallery, V&A, National Theatre, and dozens of other nationally-funded institutions are sited in London, with economic multipliers that benefit London disproportionately
+- **Corporation tax attribution**: Large firms headquartered in London pay tax attributed to London but generate revenues nationally
+
+None of this overturns "London is a net contributor." But the margin is almost certainly smaller than headline regional accounts suggest — and at least one large, compounding, unscrutinised transfer flows *to* London rather than from it.
+
+---
+
+## "Affordable Rent" does not fix geographic inequality
+
+The Affordable Rent tenure, introduced in 2012, allows providers to charge up to 80% of local market rent. In practice, it replicates — and in some cases amplifies — exactly the geographic inequality that Social Rent accidentally moderates.
+
+**Social Rent is not a market instrument.** It is set by a national formula linked to 1999 property values uprated by CPI+1%. Over 25 years this formula has diverged sharply from market rents. A London social tenant pays roughly 33% of local market rent. A North East social tenant pays roughly 75%. The formula compresses geographic variation.
+
+**Affordable Rent is just a market discount.** At 80% of local market, it inherits market geography in full. A 2-bedroom Affordable Rent flat in London costs around £1,050/month. In the North East, it costs around £517/month. The state has not narrowed the gap at all.
+
+| Region | Social Rent (2-bed) | Affordable Rent (2-bed) | Market Rent (2-bed) |
+|---|---|---|---|
+| London | £598 | £1,049 | £1,803 |
+| South East | £540 | £862 | £1,086 |
+| East of England | £503 | £771 | £959 |
+| North West | £426 | £564 | £714 |
+| North East | £407 | £517 | £545 |
+
+In 11 local authorities — mostly in the North East and North West — Affordable Rent actually exceeds the current private market rent. County Durham (AR £488/month vs market £450/month), Burnley, and South Tyneside are examples. Those tenants receive no subsidy at all. In the Isles of Scilly, AR is £781/month against a market rent of £640/month.
 
 ---
 
@@ -20,6 +97,7 @@ Social and affordable rents are set by regulation well below market levels. The 
 | Statistical Data Return (SDR) — Private Registered Providers | Regulator of Social Housing | 2024–25 (March 2025) | All registered PRPs, average weekly rents by bedroom size and LA |
 | Statistical Data Return (SDR) — Local Authority Registered Providers | Regulator of Social Housing | 2024–25 (March 2025) | All LARPs, average weekly rents by bedroom size |
 | Dwelling Stock (Table 100) | MHCLG | March 2024 | LA-owned and PRP stock by LA |
+| Affordable Housing Supply | MHCLG | 1991–2025 | Completions by tenure, LA, year |
 | LA District Boundaries | ONS via martinjc/UK-GeoJSON | 2013 | Used for choropleth maps |
 
 ---
@@ -35,9 +113,7 @@ Average weekly net rents for General Needs social housing from two sources:
 - **Private Registered Providers (PRPs)**: `SDR25_RENTS_COMB_GN` sheet aggregated from provider × LA level to LA level using weighted averages (weights = unit counts by bedroom size).
 - **Local Authority Registered Providers (LARPs)**: `LADR25_Low_Cost_Rental_Data` sheet, directly at LA level.
 
-The two streams are combined into a single LA-level weighted average, again using unit counts as weights.
-
-Weekly rents are converted to monthly equivalents using `× 52/12`.
+The two streams are combined into a single LA-level weighted average, again using unit counts as weights. Weekly rents are converted to monthly equivalents using `× 52/12`.
 
 ### 3. Affordable rents (RSH SDR)
 Same process using `SDR25_ARGN_Rents` (PRP) and `LADR25_Affordable_Rent_Data` (LARP). Affordable rents are gross rents (inclusive of eligible service charges) charged at up to 80% of market rent.
@@ -53,13 +129,11 @@ Calculated at the bedroom-size level for each LA. A stock-weighted average acros
 
 ```
 subsidy_weighted = Σ(subsidy_bed × units_bed) / Σ(units_bed)
+total_annual     = Σ_bed (subsidy_monthly_bed × units_bed × 12)
 ```
 
-The total annual subsidy bill per LA is:
-
-```
-total_annual = Σ_bed (subsidy_monthly_bed × units_bed × 12)
-```
+### 5. Employer wage subsidy gross-up
+The implicit subsidy is grossed up by `1 / (1 − 0.28) = 1.39×` to estimate the equivalent gross wage an employer would need to pay to fully compensate a worker for the difference between social and market rent, assuming a 28% effective marginal rate (basic-rate income tax + employee NI).
 
 ---
 
@@ -67,80 +141,39 @@ total_annual = Σ_bed (subsidy_monthly_bed × units_bed × 12)
 
 1. **Data year mismatch**: ONS PRMS covers Oct 2022–Sep 2023; RSH SDR is March 2025. Private rents rose substantially over this period, so the market rent figures likely *understate* current market levels and therefore *understate* the current subsidy. The analysis is directionally valid but not a point-in-time estimate.
 
-2. **Averages, not medians**: RSH reports *average* rents; ONS reports *median* rents. These are not the same measure. The comparison is imperfect; the subsidy figures are best read as directional estimates.
+2. **Averages, not medians**: RSH reports *average* rents; ONS reports *median* rents. These are not the same measure. The subsidy figures are best read as directional estimates.
 
 3. **Net vs gross rents**: Social rents in the SDR are *net* (excluding service charges); private sector rents in PRMS are the total rent paid. This causes a small understatement of the social subsidy.
 
-4. **LARP geographic attribution**: LARP data is reported by the *owning* local authority regardless of where the stock is located. For most councils, stock is overwhelmingly within their own boundary; cross-boundary ownership creates a small geographic mismatch in a minority of cases.
+4. **LARP geographic attribution**: LARP data is reported by the *owning* local authority regardless of where the stock is located.
 
-5. **Negative affordable subsidies**: In some areas, affordable rents (capped at 80% of market) exceed the average private sector rent due to thin private rental markets or local supply conditions. These cases are retained in the data as-is.
+5. **Negative affordable subsidies**: In some areas, affordable rents exceed the average private sector rent due to thin private rental markets. These cases are retained as-is.
 
-6. **LA reorganisations**: Some LAs created after 2013 (e.g. North Yorkshire UA, formed April 2023) may not appear in all sources.
+6. **LA reorganisations**: Some LAs created after 2013 (e.g. North Yorkshire UA) may not appear in all sources.
 
-7. **The subsidy never appears in a budget**: This is part of the point. Off-balance-sheet subsidies of this scale are invisible to conventional public spending frameworks, which is one motivation for measuring them.
-
----
-
-## The hidden subsidy to London's economy
-
-The geographic concentration of the subsidy raises an argument that goes beyond housing policy. A conventional defence of social housing in high-cost areas is that it allows low-wage workers — hospital staff, transport workers, cleaners — to live close enough to central London to fill jobs the city depends on. This is sometimes called the "essential workers" argument.
-
-But viewed from the perspective of regional economic balance, that argument is double-edged. If workers in central London can live at below-market housing costs because the state is bridging the gap, employers do not have to pay wages that fully reflect the cost of living there. The social housing stock is, in effect, a labour cost subsidy to London businesses: it expands the supply of affordable labour, keeps wages lower than a genuine market would require, and makes central London more economically competitive than it would otherwise be — at national expense.
-
-The mechanism is invisible precisely because it operates through the housing market rather than through public expenditure. If government were to announce an explicit annual grant to central London employers to offset their wage bills, the political and distributional scrutiny would be intense. The implicit subsidy identified in this analysis — heavily concentrated in inner London, never appearing in a budget line — is economically close to that, but faces none of that scrutiny.
-
-This matters for regional rebalancing. The UK's economic geography is unusually London-centric: London generates roughly 22% of national GDP while housing 13% of the population, and the productivity gap between London and most other English regions has widened over decades. Some of that gap reflects genuine agglomeration advantages. But some of it is built on a platform of state-subsidised labour costs that effectively tilts the economic playing field in London's favour. Businesses in Birmingham or Leeds, paying wages that must cover genuine local market housing costs, compete against London firms whose labour costs are quietly underwritten by the public sector.
-
-A full levelling-up argument would therefore note that selling or reallocating London social housing stock — far from being harmful to the national interest — might be one of the few policy levers that could reduce London-centrism without requiring active redistribution of public spending. If London employers had to pay wages that reflected true market housing costs, the city would become measurably more expensive to operate in. Some activity and investment that currently gravitates to London because it is artificially cheap to staff would instead locate in regions where no such subsidy has distorted the labour market.
-
-**Caveats to this argument:** The direct wage-suppression effect is probably modest in scale — social housing now represents only 5–8% of London households — and many of London's dominant industries cluster there for agglomeration reasons that would not be undone by higher wages alone. The argument is stronger as a structural and political-economy point (a hidden, unscrutinised, compounding subsidy to the richest part of the country) than as a precise labour market mechanism. It is also worth noting that social housing is one of many implicit subsidies to London: major infrastructure investment, the concentration of government employment, and national cultural institutions all tilt the same way. Social housing is a small part of a larger structural bias.
-
----
-
-## "Affordable Rent" does not fix geographic inequality
-
-The Affordable Rent tenure, introduced in 2012 alongside Coalition housing policy, allows providers to charge up to 80% of the local private market rent rather than the formula-based Social Rent. On paper this sounds like a modest discount. In practice, it replicates — and in some cases amplifies — exactly the geographic inequality that Social Rent accidentally moderates.
-
-**Social Rent is not a market instrument.** It is set by a national formula linked to property values and local earnings *in 1999*, uprated by CPI+1% each year. Over 25 years, that formula has diverged dramatically from actual market rents, especially in London. A 2-bedroom social property in London costs on average £598/month — roughly 33% of the local market rent. The same property in the North East costs £407/month, which is around 75% of local market rent. The formula compresses geographic variation: a Northern tenant pays somewhat less in absolute terms, but the social rent represents a much larger share of what the market charges. The subsidy is deepest in absolute terms in London, but Social Rent does at least create a nationally standardised floor.
-
-**Affordable Rent is just a market discount.** At 80% of local market rent, it directly inherits market geography. A 2-bedroom Affordable Rent property in London costs around £1,050/month. In the North East, the same property costs around £517/month. The state is not compressing this gap at all: it is granting every tenant a 20% discount and telling them to absorb whatever the local market charges for the other 80%.
-
-This has an important implication for what "affordable" means. In terms of the absolute monthly payment required from a tenant:
-
-| Region | Social Rent (2-bed) | Affordable Rent (2-bed) | Market Rent (2-bed) |
-|---|---|---|---|
-| London | £598 | £1,049 | £1,803 |
-| South East | £540 | £862 | £1,086 |
-| East of England | £503 | £771 | £959 |
-| North West | £426 | £564 | £714 |
-| North East | £407 | £517 | £545 |
-
-A tenant in an Affordable Rent property in London pays nearly as much as a market tenant in the North West. The national Affordable Rent programme does not differentiate by whether a market is genuinely expensive — it simply takes the market price as given and knocks 20% off it.
-
-**In thin Northern markets, Affordable Rent exceeds market rent.** Because Affordable Rents in RSH data are based on contracts set in previous years (when local market rents were sometimes higher), in 11 local authorities the current Affordable Rent charge is above the current ONS median private rent. County Durham (AR £488/month vs market £450/month), Burnley (£502 vs £475), and South Tyneside (£572 vs £500) are examples. These tenants receive no subsidy at all: they pay more than the open market alternative. The Isles of Scilly is an extreme case (AR £781/month vs market £640/month) owing to an exceptionally thin rental market.
-
-**What Affordable Rent does and does not do.** It does provide some subsidy in most areas — a 20% discount is not nothing. What it does not do is address the core problem that housing costs as a share of income are much higher in London than in the rest of England. A worker on median earnings in the North East paying Affordable Rent spends a larger fraction of their income on housing than their London counterpart, even though they pay less in absolute terms. Affordable Rent is a geographically flat product applied to a geographically unequal market.
+7. **The subsidy never appears in a budget**: This is part of the point. Off-balance-sheet subsidies of this scale are invisible to conventional public spending frameworks.
 
 ---
 
 ## Reproducing the analysis
 
 ```bash
-# 1. Clone the repo and set up a virtual environment
 git clone https://github.com/Kali89/housing-subsidy-analysis.git
 cd housing-subsidy-analysis
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Download all raw data (no credentials required)
-python -m src.download
+python -m src.download    # download all raw data (no credentials required)
+python -m src.pipeline    # → data/processed/subsidy_by_la_bedroom.csv
+                          # → data/processed/subsidy_summary_by_la.csv
 
-# 3. Run the full analysis pipeline
-python -m src.pipeline
-# → writes data/processed/subsidy_by_la_bedroom.csv
-# → writes data/processed/subsidy_summary_by_la.csv
+# Visualisations
+python -m src.equalisation
+python -m src.labour_subsidy
+python -m src.new_supply
+python -m src.affordable_rent
+python -m src.tweet_charts   # Twitter-optimised standalone charts
 
-# 4. Open the notebook
 jupyter lab notebooks/01_subsidy_analysis.ipynb
 ```
 
@@ -150,25 +183,13 @@ jupyter lab notebooks/01_subsidy_analysis.ipynb
 
 | File | Description |
 |---|---|
-| `data/processed/subsidy_by_la_bedroom.csv` | Long format: one row per (LA, bedroom size). Contains market rents, social rents, affordable rents, unit counts, and monthly/annual subsidies. |
-| `data/processed/subsidy_summary_by_la.csv` | Wide format: one row per LA. Contains bedroom-level breakdowns, stock-weighted average subsidies, and total annual subsidy bills. |
-
-### Key columns in the summary CSV
-
-| Column | Description |
-|---|---|
-| `la_code` | ONS area code (E06–E09) |
-| `la_name` | Local authority name |
-| `region` | English region |
-| `market_rent_monthly_{bed}` | ONS median monthly private rent by bedroom size |
-| `social_rent_monthly_{bed}` | RSH combined average social rent, monthly |
-| `affordable_rent_monthly_{bed}` | RSH combined average affordable rent, monthly |
-| `subsidy_social_wtavg_annual` | Stock-weighted average annual social subsidy per unit |
-| `subsidy_affordable_wtavg_annual` | Stock-weighted average annual affordable subsidy per unit |
-| `total_annual_subsidy_social` | Total annual social subsidy bill (£) |
-| `total_annual_subsidy_affordable` | Total annual affordable subsidy bill (£) |
-| `la_owned_stock` | LA-owned dwellings (MHCLG Table 100) |
-| `prp_stock` | PRP dwellings (MHCLG Table 100) |
+| `data/processed/subsidy_by_la_bedroom.csv` | Long format: one row per (LA, bedroom size). Market rents, social rents, affordable rents, unit counts, monthly/annual subsidies. |
+| `data/processed/subsidy_summary_by_la.csv` | Wide format: one row per LA. Bedroom-level breakdowns, stock-weighted averages, total annual subsidy bills. |
+| `data/processed/fig_labour_subsidy.png` | 3-panel: rent wedge, disproportionality, employer wage saving by region |
+| `data/processed/fig_new_supply.png` | 3-panel: SR completions 1991–2025, tenure mix by region, renewal rate |
+| `data/processed/fig_affordable_rent.png` | 3-panel: rent ladder, SR/AR as % of market, LA-level scatter |
+| `data/processed/fig_equalisation_curve.png` | Cost of equalising subsidy per unit to any target |
+| `data/processed/tweet_*.png` | Twitter-optimised (1200×675) standalone charts |
 
 ---
 
@@ -178,23 +199,24 @@ jupyter lab notebooks/01_subsidy_analysis.ipynb
 housing-subsidy-analysis/
 ├── data/
 │   ├── raw/           # Downloaded source files (gitignored)
-│   └── processed/     # Analysis outputs
+│   └── processed/     # Analysis outputs and charts
 ├── notebooks/
 │   └── 01_subsidy_analysis.ipynb
 ├── src/
-│   ├── download.py    # Downloads all raw data
-│   ├── clean_ons.py   # Parses ONS PRMS market rents
+│   ├── download.py        # Downloads all raw data
+│   ├── clean_ons.py       # Parses ONS PRMS market rents
 │   ├── clean_rsh_larp.py  # Parses LARP social/affordable rents
 │   ├── clean_rsh_prp.py   # Aggregates PRP social/affordable rents to LA level
 │   ├── clean_stock.py     # Parses MHCLG dwelling stock
-│   ├── merge.py       # Joins all datasets
-│   ├── analysis.py    # Computes subsidies and summaries
-│   ├── pipeline.py    # Orchestrates the full run
-│   ├── equalisation.py    # Equalisation cost curve visualisation
+│   ├── merge.py           # Joins all datasets
+│   ├── analysis.py        # Computes subsidies and summaries
+│   ├── pipeline.py        # Orchestrates the full run
+│   ├── equalisation.py    # Equalisation cost curve
 │   ├── labour_subsidy.py  # London labour subsidy visualisation
 │   ├── new_supply.py      # Social housing new supply visualisation
-│   ├── affordable_rent.py # Affordable Rent geographic inequality visualisation
-│   └── constants.py   # Shared paths and constants
+│   ├── affordable_rent.py # Affordable Rent geographic inequality
+│   ├── tweet_charts.py    # Twitter-optimised standalone charts
+│   └── constants.py       # Shared paths and constants
 ├── requirements.txt
 └── README.md
 ```
