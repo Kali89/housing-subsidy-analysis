@@ -507,6 +507,113 @@ def chart_subsidy_lottery(summary: pd.DataFrame) -> None:
     _save(fig, "06_subsidy_lottery")
 
 
+# ── Chart 7: Regional supply vs stock share ────────────────────────────────────
+
+def chart_supply_vs_stock() -> None:
+    """Where is Social Rent actually being built vs where the stock is."""
+    df = pd.read_csv(RAW / "ahs_open_data.csv", low_memory=False)
+    df = df[df["Completions"] == "Completion"].copy()
+    df["year_start"] = df["Year"].str[:4].astype(int)
+
+    sr = df[(df["Tenure"] == "Social Rent") & (df["year_start"] >= 2020)]
+    comp = sr.groupby("Region name")["Units"].sum()
+
+    summary = pd.read_csv(PROCESSED / "subsidy_summary_by_la.csv")
+    stock = (
+        summary.dropna(subset=["region"])
+        .groupby("region")["total_social_stock"].sum()
+        .rename(index={"Yorkshire and The Humber": "Yorkshire and The Humber"})
+    )
+
+    # Align names
+    name_map = {r: r for r in comp.index}
+    regions = [r for r in comp.index if r in stock.index]
+
+    total_comp  = comp[regions].sum()
+    total_stock = stock[regions].sum()
+
+    data = pd.DataFrame({
+        "region":   regions,
+        "comp_pct": [comp[r] / total_comp * 100  for r in regions],
+        "stock_pct":[stock[r] / total_stock * 100 for r in regions],
+    })
+    data["gap"] = data["comp_pct"] - data["stock_pct"]
+    data = data.sort_values("gap")
+
+    north = {"North East", "North West", "Yorkshire and The Humber"}
+
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    fig.patch.set_facecolor(WHITE)
+    ax.set_facecolor(WHITE)
+
+    y = np.arange(len(data))
+    h = 0.35
+
+    comp_colors  = [RED   if r in north else ORANGE for r in data["region"]]
+    stock_colors = [RED   if r in north else BLUE   for r in data["region"]]
+
+    ax.barh(y + h / 2, data["comp_pct"],  height=h, color=comp_colors,
+            alpha=0.88, label="Share of Social Rent completions (2020–24)")
+    ax.barh(y - h / 2, data["stock_pct"], height=h, color=stock_colors,
+            alpha=0.40, label="Share of existing Social Rent stock")
+
+    for i, (_, row) in enumerate(data.iterrows()):
+        is_north = row["region"] in north
+        ax.text(max(row["comp_pct"], row["stock_pct"]) + 0.3, i,
+                f'{row["comp_pct"]:.1f}% built  /  {row["stock_pct"]:.1f}% of stock',
+                va="center", fontsize=8,
+                color=RED if is_north else "#555",
+                fontweight="bold" if is_north else "normal")
+
+    regions_short = [r.replace("Yorkshire and The Humber", "Yorks & Humber")
+                     for r in data["region"]]
+    ax.set_yticks(y)
+    ax.set_yticklabels(regions_short, fontsize=11)
+    for lbl, r in zip(ax.get_yticklabels(), data["region"]):
+        if r in north:
+            lbl.set_color(RED)
+            lbl.set_fontweight("bold")
+
+    ax.axvline(0, color="#ccc", lw=0.5)
+    ax.set_xlabel("Share of England total (%)", fontsize=11, color="#444")
+    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:.0f}%"))
+    ax.set_xlim(0, data[["comp_pct","stock_pct"]].max().max() * 1.55)
+    ax.tick_params(labelsize=10)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="y", left=False)
+
+    # Custom legend
+    import matplotlib.patches as mp
+    patches = [
+        mp.Patch(color=ORANGE, alpha=0.88, label="Completions share (2020–24)"),
+        mp.Patch(color=BLUE,   alpha=0.40, label="Stock share"),
+        mp.Patch(color=RED,    alpha=0.88, label="Northern regions"),
+    ]
+    ax.legend(handles=patches, fontsize=9, loc="lower right",
+              framealpha=0.9, edgecolor="#ddd")
+
+    ne_comp  = data.loc[data["region"] == "North East", "comp_pct"].iloc[0]
+    ne_stock = data.loc[data["region"] == "North East", "stock_pct"].iloc[0]
+    nw_comp  = data.loc[data["region"] == "North West", "comp_pct"].iloc[0]
+    nw_stock = data.loc[data["region"] == "North West", "stock_pct"].iloc[0]
+
+    ax.set_title(
+        "The North is falling further behind: it holds the stock but isn't building.\n"
+        f"North East: {ne_stock:.1f}% of stock, {ne_comp:.1f}% of completions. "
+        f"North West: {nw_stock:.1f}% of stock, {nw_comp:.1f}% of completions.",
+        fontsize=13, fontweight="bold", color="#111", pad=14, loc="left",
+    )
+    fig.text(
+        0.01, 0.01,
+        "Source: MHCLG Affordable Housing Supply statistics 2020–24 × MHCLG Table 100. "
+        "Social Rent completions only. Darker bars = completions share; lighter = stock share.",
+        fontsize=8, color="#999",
+    )
+    _save(fig, "07_supply_vs_stock")
+
+
 # ── Runner ─────────────────────────────────────────────────────────────────────
 
 def run() -> None:
@@ -519,6 +626,7 @@ def run() -> None:
     chart_supply_collapse()
     chart_north_vs_london(summary, long)
     chart_subsidy_lottery(summary)
+    chart_supply_vs_stock()
 
 
 if __name__ == "__main__":
