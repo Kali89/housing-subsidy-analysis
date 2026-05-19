@@ -69,23 +69,9 @@ None of this overturns "London is a net contributor." But the margin is almost c
 
 ---
 
-## "Affordable Rent" does not fix geographic inequality
+## A note on tenure
 
-The Affordable Rent tenure, introduced in 2012, allows providers to charge up to 80% of local market rent. In practice, it replicates — and in some cases amplifies — exactly the geographic inequality that Social Rent accidentally moderates.
-
-**Social Rent is not a market instrument.** It is set by a national formula linked to 1999 property values uprated by CPI+1%. Over 25 years this formula has diverged sharply from market rents. A London social tenant pays roughly 33% of local market rent. A North East social tenant pays roughly 75%. The formula compresses geographic variation.
-
-**Affordable Rent is just a market discount.** At 80% of local market, it inherits market geography in full. A 2-bedroom Affordable Rent flat in London costs around £1,050/month. In the North East, it costs around £517/month. The state has not narrowed the gap at all.
-
-| Region | Social Rent (2-bed) | Affordable Rent (2-bed) | Market Rent (2-bed) |
-|---|---|---|---|
-| London | £598 | £1,049 | £1,803 |
-| South East | £540 | £862 | £1,086 |
-| East of England | £503 | £771 | £959 |
-| North West | £426 | £564 | £714 |
-| North East | £407 | £517 | £545 |
-
-In 11 local authorities — mostly in the North East and North West — Affordable Rent actually exceeds the current private market rent. County Durham (AR £488/month vs market £450/month), Burnley, and South Tyneside are examples. Those tenants receive no subsidy at all. In the Isles of Scilly, AR is £781/month against a market rent of £640/month.
+The analysis covers Social Rent (formula-based, ~33–75% of market depending on region) and Affordable Rent (up to 80% of market, introduced 2012). The geographic argument holds regardless of tenure: in both cases the subsidy is deepest where rents are highest. Affordable Rent does not compress geographic inequality — it replicates it, giving every tenant the same percentage discount regardless of whether their local market is genuinely affordable relative to their income. In 11 local authorities with thin rental markets (mostly in the North East and North West), Affordable Rent contracts from earlier years now exceed the current market rent — those tenants pay more than the open market alternative. The tenure distinction matters for debates about housing policy design; the geographic concentration of subsidy is the structural problem regardless of which tenure delivers it.
 
 ---
 
@@ -189,7 +175,12 @@ jupyter lab notebooks/01_subsidy_analysis.ipynb
 | `data/processed/fig_new_supply.png` | 3-panel: SR completions 1991–2025, tenure mix by region, renewal rate |
 | `data/processed/fig_affordable_rent.png` | 3-panel: rent ladder, SR/AR as % of market, LA-level scatter |
 | `data/processed/fig_equalisation_curve.png` | Cost of equalising subsidy per unit to any target |
-| `data/processed/tweet_*.png` | Twitter-optimised (1200×675) standalone charts |
+| `data/processed/tweet_01_invisible_transfer.png` | £21bn by region — London 47% |
+| `data/processed/tweet_02_per_unit_subsidy.png` | £15,600/yr per London home vs £1,906 in North East |
+| `data/processed/tweet_03_employer_subsidy.png` | Employer wage saving by region |
+| `data/processed/tweet_04_supply_collapse.png` | Social Rent completions 1991–2025 |
+| `data/processed/tweet_05_north_vs_london.png` | North: 2× the homes, 3.3× less money |
+| `data/processed/tweet_06_subsidy_lottery.png` | 44:1 per-unit lottery, K&C vs Redcar |
 
 ---
 
