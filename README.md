@@ -97,6 +97,32 @@ A full levelling-up argument would therefore note that selling or reallocating L
 
 ---
 
+## "Affordable Rent" does not fix geographic inequality
+
+The Affordable Rent tenure, introduced in 2012 alongside Coalition housing policy, allows providers to charge up to 80% of the local private market rent rather than the formula-based Social Rent. On paper this sounds like a modest discount. In practice, it replicates — and in some cases amplifies — exactly the geographic inequality that Social Rent accidentally moderates.
+
+**Social Rent is not a market instrument.** It is set by a national formula linked to property values and local earnings *in 1999*, uprated by CPI+1% each year. Over 25 years, that formula has diverged dramatically from actual market rents, especially in London. A 2-bedroom social property in London costs on average £598/month — roughly 33% of the local market rent. The same property in the North East costs £407/month, which is around 75% of local market rent. The formula compresses geographic variation: a Northern tenant pays somewhat less in absolute terms, but the social rent represents a much larger share of what the market charges. The subsidy is deepest in absolute terms in London, but Social Rent does at least create a nationally standardised floor.
+
+**Affordable Rent is just a market discount.** At 80% of local market rent, it directly inherits market geography. A 2-bedroom Affordable Rent property in London costs around £1,050/month. In the North East, the same property costs around £517/month. The state is not compressing this gap at all: it is granting every tenant a 20% discount and telling them to absorb whatever the local market charges for the other 80%.
+
+This has an important implication for what "affordable" means. In terms of the absolute monthly payment required from a tenant:
+
+| Region | Social Rent (2-bed) | Affordable Rent (2-bed) | Market Rent (2-bed) |
+|---|---|---|---|
+| London | £598 | £1,049 | £1,803 |
+| South East | £540 | £862 | £1,086 |
+| East of England | £503 | £771 | £959 |
+| North West | £426 | £564 | £714 |
+| North East | £407 | £517 | £545 |
+
+A tenant in an Affordable Rent property in London pays nearly as much as a market tenant in the North West. The national Affordable Rent programme does not differentiate by whether a market is genuinely expensive — it simply takes the market price as given and knocks 20% off it.
+
+**In thin Northern markets, Affordable Rent exceeds market rent.** Because Affordable Rents in RSH data are based on contracts set in previous years (when local market rents were sometimes higher), in 11 local authorities the current Affordable Rent charge is above the current ONS median private rent. County Durham (AR £488/month vs market £450/month), Burnley (£502 vs £475), and South Tyneside (£572 vs £500) are examples. These tenants receive no subsidy at all: they pay more than the open market alternative. The Isles of Scilly is an extreme case (AR £781/month vs market £640/month) owing to an exceptionally thin rental market.
+
+**What Affordable Rent does and does not do.** It does provide some subsidy in most areas — a 20% discount is not nothing. What it does not do is address the core problem that housing costs as a share of income are much higher in London than in the rest of England. A worker on median earnings in the North East paying Affordable Rent spends a larger fraction of their income on housing than their London counterpart, even though they pay less in absolute terms. Affordable Rent is a geographically flat product applied to a geographically unequal market.
+
+---
+
 ## Reproducing the analysis
 
 ```bash
@@ -164,6 +190,10 @@ housing-subsidy-analysis/
 │   ├── merge.py       # Joins all datasets
 │   ├── analysis.py    # Computes subsidies and summaries
 │   ├── pipeline.py    # Orchestrates the full run
+│   ├── equalisation.py    # Equalisation cost curve visualisation
+│   ├── labour_subsidy.py  # London labour subsidy visualisation
+│   ├── new_supply.py      # Social housing new supply visualisation
+│   ├── affordable_rent.py # Affordable Rent geographic inequality visualisation
 │   └── constants.py   # Shared paths and constants
 ├── requirements.txt
 └── README.md
