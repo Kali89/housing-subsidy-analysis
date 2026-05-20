@@ -10,7 +10,7 @@ This repository quantifies that subsidy for every English local authority, maps 
 
 Social and affordable rents are set by regulation well below market levels. The gap between what a tenant *would* pay on the open market and what they *actually* pay is an implicit transfer from the public balance sheet to the tenant. It is economically equivalent to a housing benefit payment, but it flows through the asset rather than through public expenditure — which is why it never appears in any budget.
 
-When you add up this gap across all 3.1 million social homes in England, the total is roughly **£21 billion per year**.
+When you add up this gap across all 3.2 million social homes in England, the total is roughly **£21 billion per year**.
 
 The geographic distribution of that subsidy is not neutral. London receives **47% of the total** while holding only **19% of the social housing stock**. The South East adds a further 14%. Together, the two most expensive regions of England absorb **60% of the entire national subsidy** — more than the combined share of the North East, North West, Yorkshire, East Midlands, and West Midlands.
 
@@ -57,7 +57,7 @@ The government grant picture is worse still. Measured by government-funded Socia
 
 The North East, which has the worst renewal rate of any English region, is building virtually nothing through any mechanism.
 
-The replacement tenure — Affordable Rent at 80% of market — does not compress geographic inequality. It replicates it. A "social" tenant in Kensington paying Affordable Rent pays **£1,252/month**. A private tenant in Liverpool pays **£675/month** in an open market. The government-subsidised "affordable" home costs nearly twice as much as a genuine market home in the North.
+The replacement tenure — Affordable Rent at 80% of market — does not compress geographic inequality. It replicates it. A "social" tenant in Kensington paying Affordable Rent pays **£1,109/month** (stock-weighted average across all bedroom sizes; a 3-bed LARP property reaches £1,234/month). A private tenant in Liverpool pays **£675/month** in an open market. The government-subsidised "affordable" home can cost more than a genuine market home in the North.
 
 ---
 

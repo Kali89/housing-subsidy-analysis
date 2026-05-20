@@ -494,7 +494,7 @@ def chart_north_vs_london(summary: pd.DataFrame, long: pd.DataFrame) -> None:
     ax_s.tick_params(axis="y", left=True, labelleft=True)
 
     fig.suptitle(
-        f"The North has {north_u/lon_u:.0f}× as many social homes as London. "
+        f"The North has {north_u/lon_u:.1f}× as many social homes as London. "
         f"It gets {lon_bn/north_bn:.1f}× less money.",
         fontsize=15.5, fontweight="bold", color=C["text"], y=0.97,
     )
